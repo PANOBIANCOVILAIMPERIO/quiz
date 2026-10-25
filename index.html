@@ -42,7 +42,7 @@ input[type=text],input[type=password],input[type=month],textarea,select{font:inh
 <body><div class="wrap" id="app"></div>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import{initializeFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,collection,query,where,getDocs}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import{initializeFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,collection,query,where,getDocs,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import{getAuth,signInWithEmailAndPassword,signOut,updatePassword,EmailAuthProvider,reauthenticateWithCredential}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import{FIREBASE_CONFIG,ADMIN_EMAIL}from"./config.js";
 const fb=initializeApp(FIREBASE_CONFIG),db=initializeFirestore(fb,{experimentalAutoDetectLongPolling:true}),auth=getAuth(fb);
@@ -72,9 +72,9 @@ async function loadSite(){try{const s=(await getDoc(doc(db,"config","site"))).da
  try{const d=(await getDoc(doc(db,"config","img_logo"))).data();LOGO=d&&d.src||null}catch(e){}
  document.documentElement.style.setProperty("--acc",CFG.accent)}
 const shrink=(f,mw,ty,q)=>new Promise((ok,no)=>{const u=URL.createObjectURL(f),i=new Image();i.onload=()=>{const s=Math.min(1,mw/i.width),c=document.createElement("canvas");c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext("2d").drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL(ty,q))};i.onerror=no;i.src=u});
-let OPEN=false,DBERR="";const T=(p,ms=8000)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(Object.assign(new Error("tempo esgotado"),{code:"timeout"})),ms))]);
-async function boot(){clear();app.appendChild(el("p","mute","Carregando..."));try{await T(loadSite(),10000)}catch(e){}OPEN=false;DBERR="";
- try{const x=(await T(getDoc(doc(db,"months",MONTH)))).data();if(x&&x.open&&x.qs&&x.qs.length){QS=x.qs;OPEN=true}}catch(e){if(e&&e.code!=="permission-denied")DBERR="Sem conexão com o banco de dados ("+(e.code||e.message)+"). Tente atualizar a página."}
+let OPEN=false,DBERR="",QN=0;const T=(p,ms=8000)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(Object.assign(new Error("tempo esgotado"),{code:"timeout"})),ms))]);
+async function boot(){clear();app.appendChild(el("p","mute","Carregando..."));try{await T(loadSite(),10000)}catch(e){}OPEN=false;QS=[];QN=0;DBERR="";
+ try{const x=(await T(getDoc(doc(db,"months",MONTH)))).data();if(x&&x.open&&x.qs&&x.qs.length){QN=x.qs.length;OPEN=true}}catch(e){if(e&&e.code!=="permission-denied")DBERR="Sem conexão com o banco de dados ("+(e.code||e.message)+"). Tente atualizar a página."}
  menu()}
 function menu(){clear();const m=el("div","menu");m.style.backgroundImage='url("'+(IMG.menu||IMG.padrao)+'")';
  const top=el("div");top.style.textAlign="center";if(LOGO){const i=el("img","logo");i.src=LOGO;i.alt="";top.appendChild(i)}top.appendChild(el("span","tag","QUIZ MENSAL • "+label(MONTH)));top.appendChild(el("h1",null,CFG.title));m.appendChild(top);
@@ -84,17 +84,16 @@ function menu(){clear();const m=el("div","menu");m.style.backgroundImage='url("'
  [mg,b1,b2,b3].forEach(x=>bt.appendChild(x));m.appendChild(bt);app.appendChild(m)}
 
 async function pick(){clear();const w=head("QUIZ MENSAL • "+label(MONTH));w.appendChild(el("h1",null,CFG.title));w.appendChild(pic("padrao"));
- const b=el("div","box");b.appendChild(el("div","name","Prof. Vitor & Participante"));b.appendChild(el("p","txt",CFG.intro.replace("{n}",QS.length)));w.appendChild(b);
- let ppl=[],rows=[];try{ppl=PL(((await getDoc(doc(db,"config","people"))).data()||{}).names||[]);rows=await attemptsOf(MONTH)}catch(e){}
- const used=new Set(rows.map(r=>r.name)),free=ppl.filter(p=>!used.has(p.name)),msg=el("p","mute","");
+ const b=el("div","box");b.appendChild(el("div","name","Prof. Vitor & Participante"));b.appendChild(el("p","txt",CFG.intro.replace("{n}",QN)));w.appendChild(b);
+ let ppl=[],rows=[],unl=[];try{ppl=PL(((await getDoc(doc(db,"config","people"))).data()||{}).names||[]);unl=((await getDoc(doc(db,"config","unlocked"))).data()||{}).names||[];rows=await attemptsOf(MONTH)}catch(e){}
+ const used=new Set(rows.map(r=>r.name)),free=ppl.filter(p=>!used.has(p.name)&&unl.includes(p.name)),msg=el("p","mute","");
  if(!ppl.length)w.appendChild(el("p","mute","Os participantes ainda não foram cadastrados."));
- else if(!free.length)w.appendChild(el("p","mute","Todos os participantes já jogaram neste mês."));
+ else if(!free.length)w.appendChild(el("p","mute","Nenhum participante liberado no momento. Aguarde o administrador liberar o seu acesso (ou você já jogou neste mês)."));
  else{const us=[...new Set(free.map(p=>p.unit).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt")),su=el("select"),sn=el("select");
   const fill=()=>{sn.textContent="";const o0=el("option",null,"Selecione seu nome");o0.value="";sn.appendChild(o0);free.filter(p=>!su.value||p.unit===su.value).sort((a,b)=>a.name.localeCompare(b.name,"pt")).forEach(p=>{const o=el("option",null,p.name);o.value=p.name;sn.appendChild(o)})};
   const u0=el("option",null,"Todas as unidades");u0.value="";su.appendChild(u0);us.forEach(u=>{const o=el("option",null,u);o.value=u;su.appendChild(o)});su.onchange=fill;fill();
   if(us.length){w.appendChild(el("div","mute","Sua unidade"));w.appendChild(su)}w.appendChild(el("div","mute","Seu nome"));w.appendChild(sn);
-  const go=el("button","btn","▶ COMEÇAR");go.onclick=async()=>{const n=sn.value;if(!n)return;const p=free.find(x=>x.name===n);S={name:n,i:0,score:0};
-   try{await setDoc(doc(db,"attempts",key(n)),{month:MONTH,name:n,unit:p.unit||"",score:null,ts:Date.now()})}catch(e){msg.textContent="Este nome já foi usado neste mês ou não foi possível iniciar.";return}scene()};
+  const go=el("button","btn","▶ COMEÇAR");go.onclick=()=>{const n=sn.value;if(!n)return;startPlay(n,free.find(x=>x.name===n),msg)};
   w.appendChild(go);w.appendChild(msg)}
  const bk=el("button","opt","⌂ Voltar ao menu");bk.style.marginTop="16px";bk.onclick=menu;w.appendChild(bk);app.appendChild(w)}
 
@@ -107,6 +106,11 @@ async function ranking(){clear();const w=head("RANKING");w.appendChild(el("h1",n
   if(sel.value==="year")box.appendChild(el("p","mute","Entre parênteses: quizzes jogados no ano."))};
  const load=async()=>{box.textContent="Carregando...";try{data=sel.value==="year"?await attemptsRange(Y+"-01",Y+"-12"):await attemptsOf(sel.value)}catch(e){data=[]}draw()};
  sel.onchange=load;fi.oninput=draw;[sel,fi,box].forEach(x=>w.appendChild(x));const bk=el("button","opt","⌂ Voltar ao menu");bk.style.marginTop="16px";bk.onclick=menu;w.appendChild(bk);app.appendChild(w);load()}
+
+async function startPlay(n,p,msg){msg.textContent="Verificando...";
+ try{const x=(await getDoc(doc(db,"months",MONTH))).data();if(!x||!x.open||!x.qs||!x.qs.length)throw 0;QS=x.qs}catch(e){msg.textContent="O quiz não está disponível agora.";return}
+ try{await setDoc(doc(db,"attempts",key(n)),{month:MONTH,name:n,unit:p.unit||"",score:null,ts:Date.now()})}catch(e){msg.textContent="Este nome já foi usado neste mês, está bloqueado ou não foi possível iniciar.";return}
+ S={name:n,i:0,score:0};scene()}
 
 function scene(){clear();const q=QS[S.i],c=CH[q.w],o=shuffle(q.o.map((t,k)=>({t,ok:k===0}))),w=el("div"),st=pic("padrao");
  st.appendChild(el("div","prog","Pergunta "+(S.i+1)+"/"+QS.length+" • "+S.score+" pts"));w.appendChild(st);
@@ -159,19 +163,26 @@ async function admin(m){clear();MONTH=m;const w=el("div");w.appendChild(el("h1",
   try{await setDoc(doc(db,"months",m),{qs:a},{merge:true});dirty=false;say("✅ "+a.length+" pergunta(s) salva(s).");setTimeout(()=>admin(m),1000)}catch(e){say("Não foi possível salvar ("+((e&&e.code)||"erro")+"). Saia e entre de novo no painel e tente novamente.")}};
  q.appendChild(sv);q.appendChild(qm);w.appendChild(q);
 
- let names=[];try{names=PL(((await getDoc(doc(db,"config","people"))).data()||{}).names||[])}catch(e){}
- const savePeople=a=>setDoc(doc(db,"config","people"),{names:a});
- const p=el("div","card");p.appendChild(el("b",null,"Participantes ("+names.length+")"));
+ let names=[],UL=[];try{names=PL(((await getDoc(doc(db,"config","people"))).data()||{}).names||[]);UL=((await getDoc(doc(db,"config","unlocked"))).data()||{}).names||[]}catch(e){}
+ const savePeople=a=>setDoc(doc(db,"config","people"),{names:a}),saveUL=a=>setDoc(doc(db,"config","unlocked"),{names:a});
+ const p=el("div","card");p.appendChild(el("b",null,"Participantes ("+names.length+" • "+names.filter(x=>UL.includes(x.name)).length+" liberados)"));
+ p.appendChild(el("p","mute","Novos participantes começam 🔒 bloqueados. Só quem estiver 🔓 liberado aparece na lista do jogo e consegue começar."));
  const pi=el("input");pi.type="text";pi.placeholder="Nome do participante";pi.maxLength=50;const pu=el("input");pu.type="text";pu.placeholder="Unidade / academia";pu.maxLength=60;pu.setAttribute("list","units");
  const dl=el("datalist");dl.id="units";[...new Set(names.map(x=>x.unit).filter(Boolean))].forEach(u=>{const o=el("option");o.value=u;dl.appendChild(o)});
  p.appendChild(pi);p.appendChild(pu);p.appendChild(dl);const pm=el("p","mute","");
  const pa=el("button","btn","+ Adicionar participante");pa.onclick=async()=>{const n=pi.value.trim().replace(/\s+/g," "),u=pu.value.trim().replace(/\s+/g," ");if(!n)return;if(!u){pm.textContent="Informe a unidade do participante.";return}
   const dup=names.find(x=>norm(x.name)===norm(n));if(dup){pm.textContent="Esse participante já existe: "+dup.name+" ("+(dup.unit||"sem unidade")+")";return}
   try{await savePeople([...names,{name:n,unit:u}]);admin(m)}catch(e){pm.textContent="Erro ao salvar."}};p.appendChild(pa);p.appendChild(pm);
+ const bk2=el("div");bk2.style.cssText="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0";
+ const ba=el("button","opt","🔓 Liberar todos");ba.onclick=async()=>{try{await saveUL(names.map(x=>x.name));admin(m)}catch(e){pm.textContent="Erro ao salvar."}};
+ const bb=el("button","opt","🔒 Bloquear todos");bb.onclick=async()=>{try{await saveUL([]);admin(m)}catch(e){pm.textContent="Erro ao salvar."}};bk2.appendChild(ba);bk2.appendChild(bb);p.appendChild(bk2);
  names.slice().sort((a,b)=>a.name.localeCompare(b.name,"pt")).forEach(x=>{const d=el("div");d.style.cssText="display:flex;gap:6px;align-items:center;padding:4px 0;flex-wrap:wrap";const s=el("span",null,x.name+" – "+(x.unit||"sem unidade"));s.style.flex="1";d.appendChild(s);
+  const lo=UL.includes(x.name),tg=el("button","opt",lo?"🔓 Liberado":"🔒 Bloqueado");tg.style.cssText="font-weight:bold;color:#fff;background:"+(lo?"#1faa59":"#c0334d");
+  tg.onclick=async()=>{try{await saveUL(lo?UL.filter(n=>n!==x.name):[...UL,x.name]);admin(m)}catch(e){pm.textContent="Erro ao salvar."}};
   const e=el("button","opt","Unidade");e.onclick=async()=>{const u=prompt("Unidade de "+x.name+":",x.unit||"");if(u==null||!u.trim())return;await savePeople(names.map(y=>y===x?{...y,unit:u.trim()}:y));admin(m)};
   const b=el("button","opt","Remover");b.onclick=async()=>{if(!confirm("Remover "+x.name+"? Isso também apaga as tentativas e pontuações dele em todos os meses (ele sai do ranking e da lista de nova tentativa). Não dá para desfazer."))return;
-   try{const q=await getDocs(query(collection(db,"attempts"),where("name","==",x.name)));await Promise.all(q.docs.map(d=>deleteDoc(d.ref)));await savePeople(names.filter(y=>y!==x));admin(m)}catch(e){pm.textContent="Não foi possível remover ("+((e&&e.code)||"erro")+")."}};d.appendChild(e);d.appendChild(b);p.appendChild(d)});w.appendChild(p);
+   try{const q=await getDocs(query(collection(db,"attempts"),where("name","==",x.name)));await Promise.all(q.docs.map(d=>deleteDoc(d.ref)));await savePeople(names.filter(y=>y!==x));await saveUL(UL.filter(n=>n!==x.name));admin(m)}catch(e){pm.textContent="Não foi possível remover ("+((e&&e.code)||"erro")+")."}};
+  d.appendChild(tg);d.appendChild(e);d.appendChild(b);p.appendChild(d)});w.appendChild(p);
  const im=el("div","card");im.appendChild(el("b",null,"Importar ano inteiro (JSON)"));im.appendChild(el("p","mute",'Formato: {"2027-01":[perguntas],"2027-02":[perguntas],...}. Os meses colados substituem as perguntas desses meses; o estado liberado/fechado não muda.'));
  const it=el("textarea");it.style.minHeight="140px";im.appendChild(it);const imsg=el("p","mute","");
  const ib=el("button","btn","⬆ Importar ano inteiro");ib.onclick=async()=>{try{const o=JSON.parse(it.value),ks=Object.keys(o);
