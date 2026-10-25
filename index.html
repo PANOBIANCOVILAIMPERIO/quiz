@@ -129,7 +129,7 @@ function login(){clear();const w=el("div");w.appendChild(el("h1",null,"🔒 Admi
  const bk=el("button","opt","⌂ Voltar");bk.style.marginTop="12px";bk.onclick=boot;[pw,go,msg,bk].forEach(x=>w.appendChild(x));app.appendChild(w);pw.focus()}
 
 async function admin(m){clear();MONTH=m;const w=el("div");w.appendChild(el("h1",null,"⚙ Painel do administrador"));
- const c=el("div","card");c.appendChild(el("b",null,"Mês"));const mi=el("input");mi.type="month";mi.value=m;mi.onchange=()=>mi.value&&admin(mi.value);c.appendChild(mi);
+ const c=el("div","card");c.appendChild(el("b",null,"Mês"));const mi=el("input");mi.type="month";mi.value=m;mi.onchange=()=>{if(!mi.value)return;if(dirty&&!confirm("Há alterações não salvas. Trocar de mês mesmo assim?")){mi.value=m;return}admin(mi.value)};c.appendChild(mi);
  let md={};try{md=(await getDoc(doc(db,"months",m))).data()||{}}catch(e){}
  c.appendChild(el("p",null,"Situação: "+(md.open?"🟢 LIBERADO":"🔴 FECHADO")+" • "+(md.qs?md.qs.length:0)+" perguntas cadastradas"));
  const tg=el("button","btn",md.open?"Fechar o quiz":"Liberar o quiz");tg.onclick=async()=>{try{await setDoc(doc(db,"months",m),{open:!md.open},{merge:true});admin(m)}catch(e){alert("Não foi possível alterar.")}};c.appendChild(tg);w.appendChild(c);
@@ -145,17 +145,18 @@ async function admin(m){clear();MONTH=m;const w=el("div");w.appendChild(el("h1",
   fi.onchange=async()=>{const f=fi.files[0];if(!f)return;fm.textContent="Enviando...";try{const lg=k==="logo",ty=lg?"image/png":"image/jpeg";let src=await shrink(f,lg?400:1280,ty,.82);if(src.length>900000)src=await shrink(f,lg?250:900,ty,.7);if(src.length>900000){fm.textContent="Imagem pesada demais.";return}await setDoc(doc(db,"config","img_"+k),{src});await loadSite();admin(m)}catch(e){fm.textContent="Erro ao enviar a imagem."}};
   s.appendChild(fi);s.appendChild(fm);const rs=el("button","opt","Restaurar padrão");rs.onclick=async()=>{try{await deleteDoc(doc(db,"config","img_"+k));await loadSite();admin(m)}catch(e){fm.textContent="Erro."}};s.appendChild(rs);pz.appendChild(s)});
  w.appendChild(pz);
- const q=el("div","card");q.appendChild(el("b",null,"Perguntas de "+label(m)));const list=el("div"),cards=[];const num=()=>cards.forEach((r,i)=>r.h.textContent="Pergunta "+(i+1));
+ let dirty=false;const q=el("div","card");q.appendChild(el("b",null,"Perguntas de "+label(m)));const list=el("div"),cards=[];const num=()=>cards.forEach((r,i)=>r.h.textContent="Pergunta "+(i+1));
  const addQ=x=>{x=x||{w:"T",s:"",o:["","","",""],e:""};const d=el("div","card"),r={h:el("b")};d.appendChild(r.h);
   const f=(l,t,v)=>{d.appendChild(el("div","mute",l));const i=el(t);if(t==="input")i.type="text";i.value=v||"";d.appendChild(i);return i};
   d.appendChild(el("div","mute","Quem fala"));r.w=el("select");[["T",CH.T.n],["L",CH.L.n]].forEach(([v,n])=>{const o=el("option",null,n);o.value=v;r.w.appendChild(o)});r.w.value=x.w;d.appendChild(r.w);
   r.s=f("Situação (o que o personagem diz)","textarea",x.s);r.c=f("✅ Resposta CORRETA","input",x.o[0]);r.a=f("❌ Errada 1","input",x.o[1]);r.b=f("❌ Errada 2","input",x.o[2]);r.x=f("❌ Errada 3","input",x.o[3]);r.e=f("Explicação mostrada após responder","textarea",x.e);
-  const rm=el("button","btn","Remover esta pergunta");rm.onclick=()=>{cards.splice(cards.indexOf(r),1);d.remove();num()};d.appendChild(rm);list.appendChild(d);cards.push(r);num()};
+  const rm=el("button","btn","Remover esta pergunta");rm.onclick=()=>{if(!confirm("Remover esta pergunta da lista? Depois, clique em Salvar para confirmar."))return;cards.splice(cards.indexOf(r),1);d.remove();num();dirty=true;qm.textContent="Pergunta removida da tela. ⚠ Clique em 💾 Salvar perguntas para confirmar.";qm.scrollIntoView({block:"center"})};d.oninput=()=>{dirty=true};d.appendChild(rm);list.appendChild(d);cards.push(r);num()};
  (md.qs&&md.qs.length?md.qs:[null]).forEach(addQ);q.appendChild(list);
- const ad=el("button","btn","+ Adicionar pergunta");ad.onclick=()=>addQ();q.appendChild(ad);const qm=el("p","mute","");
- const sv=el("button","btn","💾 Salvar perguntas de "+label(m));sv.onclick=async()=>{const a=[];for(let i=0;i<cards.length;i++){const r=cards[i],o=[r.c.value,r.a.value,r.b.value,r.x.value].map(t=>t.trim()).filter(Boolean);
-  if(!r.s.value.trim()||!r.c.value.trim()||o.length<2||!r.e.value.trim()){qm.textContent="Pergunta "+(i+1)+": preencha situação, resposta correta, ao menos 1 errada e explicação.";return}a.push({w:r.w.value,s:r.s.value.trim(),o,e:r.e.value.trim()})}
-  if(!a.length){qm.textContent="Mantenha ao menos uma pergunta.";return}try{await setDoc(doc(db,"months",m),{qs:a},{merge:true});admin(m)}catch(e){qm.textContent="Sem permissão ou erro ao salvar."}};
+ const ad=el("button","btn","+ Adicionar pergunta");ad.onclick=()=>{addQ();dirty=true};q.appendChild(ad);const qm=el("p","mute","");
+ const sv=el("button","btn","💾 Salvar perguntas de "+label(m));sv.onclick=async()=>{const a=[],say=t=>{qm.textContent=t;qm.scrollIntoView({block:"center"})};for(let i=0;i<cards.length;i++){const r=cards[i];if(![r.s,r.c,r.a,r.b,r.x,r.e].some(f=>f.value.trim()))continue;const o=[r.c.value,r.a.value,r.b.value,r.x.value].map(t=>t.trim()).filter(Boolean);
+  if(!r.s.value.trim()||!r.c.value.trim()||o.length<2||!r.e.value.trim()){say("Pergunta "+(i+1)+": preencha situação, resposta correta, ao menos 1 errada e explicação.");return}a.push({w:r.w.value,s:r.s.value.trim(),o,e:r.e.value.trim()})}
+  if(!a.length&&!confirm("Salvar este mês sem nenhuma pergunta? O quiz deste mês ficará vazio."))return;
+  try{await setDoc(doc(db,"months",m),{qs:a},{merge:true});dirty=false;say("✅ "+a.length+" pergunta(s) salva(s).");setTimeout(()=>admin(m),1000)}catch(e){say("Não foi possível salvar ("+((e&&e.code)||"erro")+"). Saia e entre de novo no painel e tente novamente.")}};
  q.appendChild(sv);q.appendChild(qm);w.appendChild(q);
 
  let names=[];try{names=PL(((await getDoc(doc(db,"config","people"))).data()||{}).names||[])}catch(e){}
@@ -187,6 +188,6 @@ async function admin(m){clear();MONTH=m;const w=el("div");w.appendChild(el("h1",
  const sb=el("button","btn","Alterar senha");sb.onclick=async()=>{sm.textContent="";if(p1.value.length<6){sm.textContent="A nova senha precisa ter ao menos 6 caracteres.";return}if(p1.value!==p2.value){sm.textContent="As senhas novas não são iguais.";return}if(p1.value===p0.value){sm.textContent="A nova senha deve ser diferente da atual.";return}
   try{const u=auth.currentUser;await reauthenticateWithCredential(u,EmailAuthProvider.credential(ADMIN_EMAIL,p0.value));await updatePassword(u,p1.value);[p0,p1,p2].forEach(i=>i.value="");sm.textContent="✅ Senha alterada."}catch(e){sm.textContent=["auth/wrong-password","auth/invalid-credential"].includes(e&&e.code)?"Senha atual incorreta.":"Não foi possível alterar a senha."}};
  sc.appendChild(sb);sc.appendChild(sm);w.appendChild(sc);
- const out=el("button","btn","Sair");out.onclick=async()=>{await signOut(auth);MONTH=TODAY;boot()};w.appendChild(out);app.appendChild(w)}
+ const out=el("button","btn","Sair");out.onclick=async()=>{if(dirty&&!confirm("Há alterações não salvas. Sair mesmo assim?"))return;await signOut(auth);MONTH=TODAY;boot()};w.appendChild(out);app.appendChild(w)}
 boot();
 </script></body></html>
