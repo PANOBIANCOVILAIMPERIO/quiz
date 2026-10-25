@@ -132,7 +132,7 @@ function login(){clear();const w=el("div");w.appendChild(el("h1",null,"🔒 Admi
  go.onclick=run;pw.onkeydown=e=>{if(e.key==="Enter")run()};
  const bk=el("button","opt","⌂ Voltar");bk.style.marginTop="12px";bk.onclick=boot;[pw,go,msg,bk].forEach(x=>w.appendChild(x));app.appendChild(w);pw.focus()}
 
-async function admin(m){clear();MONTH=m;const w=el("div");w.appendChild(el("h1",null,"⚙ Painel do administrador"));
+async function admin(m){const sy=window.scrollY;MONTH=m;const w=el("div");w.appendChild(el("h1",null,"⚙ Painel do administrador"));
  const c=el("div","card");c.appendChild(el("b",null,"Mês"));const mi=el("input");mi.type="month";mi.value=m;mi.onchange=()=>{if(!mi.value)return;if(dirty&&!confirm("Há alterações não salvas. Trocar de mês mesmo assim?")){mi.value=m;return}admin(mi.value)};c.appendChild(mi);
  let md={};try{md=(await getDoc(doc(db,"months",m))).data()||{}}catch(e){}
  c.appendChild(el("p",null,"Situação: "+(md.open?"🟢 LIBERADO":"🔴 FECHADO")+" • "+(md.qs?md.qs.length:0)+" perguntas cadastradas"));
@@ -200,6 +200,6 @@ async function admin(m){clear();MONTH=m;const w=el("div");w.appendChild(el("h1",
  const sb=el("button","btn","Alterar senha");sb.onclick=async()=>{sm.textContent="";if(p1.value.length<6){sm.textContent="A nova senha precisa ter ao menos 6 caracteres.";return}if(p1.value!==p2.value){sm.textContent="As senhas novas não são iguais.";return}if(p1.value===p0.value){sm.textContent="A nova senha deve ser diferente da atual.";return}
   try{const u=auth.currentUser;await reauthenticateWithCredential(u,EmailAuthProvider.credential(ADMIN_EMAIL,p0.value));await updatePassword(u,p1.value);[p0,p1,p2].forEach(i=>i.value="");sm.textContent="✅ Senha alterada."}catch(e){sm.textContent=["auth/wrong-password","auth/invalid-credential"].includes(e&&e.code)?"Senha atual incorreta.":"Não foi possível alterar a senha."}};
  sc.appendChild(sb);sc.appendChild(sm);w.appendChild(sc);
- const out=el("button","btn","Sair");out.onclick=async()=>{if(dirty&&!confirm("Há alterações não salvas. Sair mesmo assim?"))return;await signOut(auth);MONTH=TODAY;boot()};w.appendChild(out);app.appendChild(w)}
+ const out=el("button","btn","Sair");out.onclick=async()=>{if(dirty&&!confirm("Há alterações não salvas. Sair mesmo assim?"))return;await signOut(auth);MONTH=TODAY;boot()};w.appendChild(out);clear();app.appendChild(w);window.scrollTo(0,sy)}
 boot();
 </script></body></html>
