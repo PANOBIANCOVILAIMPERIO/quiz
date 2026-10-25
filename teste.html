@@ -1,0 +1,19 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Teste de conexão</title>
+<style>body{font:15px system-ui,sans-serif;padding:14px;max-width:760px;margin:auto}pre{background:#111;color:#0f0;padding:10px;white-space:pre-wrap;word-break:break-all;max-height:320px;overflow:auto;font-size:12px}.ok{color:#0a7a2a}.no{color:#c00}p{margin:6px 0}</style></head><body>
+<h2>Teste de conexão</h2><p>Aguarde cerca de 40 segundos, até aparecer "Fim do teste". Depois envie uma captura desta tela.</p><div id="r"></div><pre id="l"></pre>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import{initializeFirestore,doc,getDoc,setLogLevel}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import{FIREBASE_CONFIG}from"./config.js";
+const r=document.getElementById("r"),l=document.getElementById("l");
+const add=(t,ok)=>{const p=document.createElement("p");p.className=ok?"ok":"no";p.textContent=(ok?"✅ ":"❌ ")+t;r.appendChild(p)};
+["log","info","warn","error"].forEach(k=>{const o=console[k];console[k]=(...a)=>{if(l.textContent.length<6000)l.textContent+=k+": "+a.map(x=>typeof x==="string"?x:(x&&x.message)||JSON.stringify(x)).join(" ").slice(0,300)+"\n";o.apply(console,a)}});
+setLogLevel("debug");
+const T=(p,ms)=>Promise.race([p,new Promise((_,n)=>setTimeout(()=>n({code:"tempo esgotado"}),ms))]);
+const info=document.createElement("p");info.textContent="Projeto: "+FIREBASE_CONFIG.projectId+" • "+navigator.userAgent;r.appendChild(info);
+try{await T(fetch("https://firestore.googleapis.com/",{mode:"no-cors"}),8000);add("A rede alcança firestore.googleapis.com",true)}catch(e){add("A rede NÃO alcança firestore.googleapis.com ("+(e.code||e.message)+")",false)}
+const run=async(name,opts)=>{try{const app=initializeApp(FIREBASE_CONFIG,name),db=initializeFirestore(app,opts);const d=await T(getDoc(doc(db,"config","people")),15000);add(name+": o banco respondeu (documento existe: "+d.exists()+")",true)}catch(e){add(name+": "+(e.code||e.message),false)}};
+await run("normal",{});
+await run("alternativa",{experimentalForceLongPolling:true});
+add("Fim do teste",true);
+</script></body></html>
