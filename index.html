@@ -43,7 +43,8 @@ input[type=text],input[type=password],input[type=month],textarea,select{font:inh
 @media (min-width:640px){.opts{grid-template-columns:1fr 1fr;gap:10px}}
 .stage.pic{max-width:calc(62vh*16/9);margin-left:auto;margin-right:auto}
 @media (min-width:900px){.wrap{max-width:1400px;padding:14px 2vw}.txt{font-size:clamp(18px,1.3vw,24px)}.opt{font-size:clamp(15px,1.1vw,19px);padding:14px 16px}.menu{max-width:820px;margin:0 auto}}
-@media (min-width:1100px){.scene{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:18px;align-items:start;align-content:center;min-height:calc(100vh - 40px)}.scene>.stage{grid-column:1;grid-row:1/span 3;max-width:none;margin:0}.scene>.box,.scene>.opts,.scene>.btn{grid-column:2;margin-top:0}}
+@media (min-width:900px){.scene{max-width:min(100%,1000px);margin:0 auto;min-height:calc(100vh - 40px);display:flex;flex-direction:column;justify-content:center}.scene>.stage{width:min(100%,max(480px,calc((100vh - 440px)*16/9)));max-width:none;margin:0 auto}.scene>.box{min-height:130px}.scene .txt{font-size:clamp(16px,1.1vw,19px)}.scene .opt{font-size:clamp(15px,1.05vw,18px);padding:11px 14px}}
+.box .btn{display:block;margin:12px 0 0 auto;padding:10px 26px}
 </style></head>
 <body><div class="wrap" id="app"></div>
 <script type="module">
@@ -125,7 +126,7 @@ function scene(){clear();const q=QS[S.i],c=CH[q.w],o=shuffle(q.o.map((t,k)=>({t,
 function answer(ok,bt,os,q,c,st,b,w){[...os.children].forEach(x=>{x.disabled=true;if(x.textContent===q.o[0])x.classList.add("ok")});
  if(!ok)bt.classList.add("no");else S.score+=Math.round(100/QS.length);
  st.querySelector("img").src=IMG[ok?"acerto":"erro"];snd(ok);b.textContent="";b.appendChild(el("div","name",CH.T.n));b.appendChild(el("p","txt",(ok?"Boa! ✅ ":"Quase! ❌ ")+q.e));
- const nx=el("button","btn",S.i<QS.length-1?"PRÓXIMA ▶":"VER RESULTADO ▶");nx.onclick=async()=>{S.i++;if(S.i<QS.length)scene();else{try{await updateDoc(doc(db,"attempts",key(S.name)),{score:S.score})}catch(e){}end()}};w.appendChild(nx)}
+ const nx=el("button","btn",S.i<QS.length-1?"PRÓXIMA ▶":"VER RESULTADO ▶");nx.onclick=async()=>{S.i++;if(S.i<QS.length)scene();else{try{await updateDoc(doc(db,"attempts",key(S.name)),{score:S.score})}catch(e){}end()}};b.appendChild(nx)}
 async function end(){clear();const sc=S.score,w=head("RESULTADO • "+label(MONTH));w.appendChild(pic(sc>=60?"acerto":"erro"));
  const b=el("div","box");b.appendChild(el("div","name","Prof. Vitor"));b.appendChild(el("p","big",sc+" pts"));
  b.appendChild(el("p","txt",sc>=90?"Perfeito! Você está pronto para liderar a equipe!":sc>=70?"Muito bom! Só alguns detalhes para ajustar.":sc>=50?"Bom começo! Vale revisar os pontos de segurança.":"Vamos estudar mais! Segurança do aluno vem sempre em primeiro lugar."));w.appendChild(b);
