@@ -50,7 +50,7 @@ input[type=text],input[type=password],input[type=month],textarea,select{font:inh
 </style></head>
 <body><div class="wrap" id="app"></div>
 <button id="mus" aria-label="Som">🔊</button>
-<div id="ver">versão 12 • noir + sons de videogame</div>
+<div id="ver">versão 13 • 4 trilhas + fanfarra 100</div>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{initializeFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,collection,query,where,getDocs,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -76,23 +76,51 @@ const unlockAudio=()=>{getAC()};
 const snd=ok=>{if(MUTED)return;try{const ac=getAC(),t=ac.currentTime,bl=(f1,f2,at,d,v,ty)=>{const o=ac.createOscillator(),g=ac.createGain();o.type=ty;o.frequency.setValueAtTime(f1,t+at);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+at+d);g.gain.setValueAtTime(v,t+at);g.gain.exponentialRampToValueAtTime(.001,t+at+d);o.connect(g);g.connect(ac.destination);o.start(t+at);o.stop(t+at+d+.02)};
  if(ok){[523,659,784,1047].forEach((f,k)=>bl(f,0,k*.06,k===3?.3:.1,.13,"square"));bl(2093,0,.2,.25,.04,"triangle")}
  else{[[330,0],[311,.14],[294,.28]].forEach(([f,at])=>bl(f,0,at,.12,.12,"square"));bl(277,110,.42,.5,.14,"sawtooth")}}catch(e){}};
+const sndTop=()=>{if(MUTED)return;try{const ac=getAC(),t=ac.currentTime,bl=(f,at,d,v,ty,lp)=>{const o=ac.createOscillator(),g=ac.createGain();o.type=ty;o.frequency.setValueAtTime(f,t+at);g.gain.setValueAtTime(.0001,t+at);g.gain.linearRampToValueAtTime(v,t+at+.02);g.gain.exponentialRampToValueAtTime(.001,t+at+d);let n=o;if(lp){const l=ac.createBiquadFilter();l.type="lowpass";l.frequency.value=lp;o.connect(l);n=l}n.connect(g);g.connect(ac.destination);o.start(t+at);o.stop(t+at+d+.02)};
+ [523,659,784,1047,1319,1568,2093].forEach((f,k)=>bl(f,k*.07,.18,.12,"square"));
+ [523,659,784,1047].forEach(f=>bl(f,.55,1.5,.07,"sawtooth",2500));bl(131,.55,1.5,.25,"sine");bl(262,.55,1.5,.12,"triangle");
+ [2093,2637,3136,3951,3136,2637,3951,4186].forEach((f,k)=>bl(f,.8+k*.14,.3,.035,"sine"));
+ const nb=ac.createBuffer(1,ac.sampleRate,ac.sampleRate),nd=nb.getChannelData(0);for(let i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;
+ for(let k=0;k<45;k++){const at=.6+Math.random()*1.8,s=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();s.buffer=nb;f.type="highpass";f.frequency.value=1500;g.gain.setValueAtTime(.09,t+at);g.gain.exponentialRampToValueAtTime(.001,t+at+.04);s.connect(f);f.connect(g);g.connect(ac.destination);s.start(t+at);s.stop(t+at+.05)}}catch(e){}};
 /* trilha sonora própria (estilo hip-hop noir), gerada pelo navegador */
-const MU={want:false,run:false,t:0,bar:0,id:0,out:null,E:null};
+const MU={want:false,run:false,t:0,bar:0,id:0,out:null,E:null,tr:null,g:.2,last:-1};
 function engine(ac,out){
  const sr=ac.sampleRate,nb=ac.createBuffer(1,sr,sr),nd=nb.getChannelData(0);let s=12345;for(let i=0;i<sr;i++){s=(s*1664525+1013904223)>>>0;nd[i]=s/2147483648-1}
  const mf=m=>440*Math.pow(2,(m-69)/12);
  const tone=(m,t,d,v,ty,o={})=>{const osc=ac.createOscillator(),g=ac.createGain();osc.type=ty;osc.frequency.value=mf(m);let n=osc;if(o.lp){const f=ac.createBiquadFilter();f.type="lowpass";f.frequency.value=o.lp;osc.connect(f);n=f}g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v,t+(o.att||.01));g.gain.exponentialRampToValueAtTime(.0001,t+d);n.connect(g);g.connect(out);osc.start(t);osc.stop(t+d+.05)};
  const kick=(t,v,f0,f1)=>{const o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(f0||150,t);o.frequency.exponentialRampToValueAtTime(f1||45,t+.12);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+.2);o.connect(g);g.connect(out);o.start(t);o.stop(t+.22)};
- const nz=(t,d,v,hp)=>{const src=ac.createBufferSource();src.buffer=nb;const f=ac.createBiquadFilter();f.type="highpass";f.frequency.value=hp;const g=ac.createGain();g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);src.connect(f);f.connect(g);g.connect(out);src.start(t);src.stop(t+d+.02)};
- return {tone,kick,nz}}
+ const nz=(t,d,v,hp,lp)=>{const src=ac.createBufferSource();src.buffer=nb;const f=ac.createBiquadFilter();f.type="highpass";f.frequency.value=hp;let n=f;src.connect(f);if(lp){const l=ac.createBiquadFilter();l.type="lowpass";l.frequency.value=lp;f.connect(l);n=l}const g=ac.createGain();g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);n.connect(g);g.connect(out);src.start(t);src.stop(t+d+.02)};
+ const tom=(t,f0,v)=>{const o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f0*.6,t+.18);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+.22);o.connect(g);g.connect(out);o.start(t);o.stop(t+.24)};
+ return {tone,kick,nz,tom}}
 const NOIR={bpm:84,bar(E,t,i){const b=60/84,R=[45,41,50,52][i],V=[[57,60,64,67],[65,69,72,76],[62,65,69,72],[59,62,64,68]][i];
  [0,1.5,2.5].forEach(p=>E.kick(t+p*b,.7,110,48));[1,3].forEach(p=>E.nz(t+p*b,.15,.34,1500));
  for(let j=0;j<8;j++)E.nz(t+j*b/2+(j%2?.04:0),.04,.09,8000);
  [[0,0],[1.5,0],[2.5,7]].forEach(([p,n])=>E.tone(R+n,t+p*b,b*.7,.5,"sine"));
  [0,2].forEach(p=>V.forEach(m=>E.tone(m,t+p*b,b*1.8,.05,"triangle",{att:.15})));
  const ml=i%2?[[.5,76],[2,72],[3,74]]:[[0,69],[1.5,72],[2.5,76]];ml.forEach(([p,m])=>{E.tone(m,t+p*b,b*1.4,.1,"sine");E.tone(m+12,t+p*b,b*.6,.04,"sine")})}};
-const mtick=()=>{if(!MU.run)return;const bd=240/NOIR.bpm;while(MU.t<AC.currentTime+.6){NOIR.bar(MU.E,MU.t,MU.bar%4);MU.t+=bd;MU.bar++}};
-const musicStart=()=>{MU.want=true;if(MUTED||CFG.music===false||MU.run)return;const ac=getAC();if(!ac)return;MU.out=ac.createGain();MU.out.gain.setValueAtTime(.0001,ac.currentTime);MU.out.gain.linearRampToValueAtTime(.2,ac.currentTime+1.5);MU.out.connect(ac.destination);MU.E=engine(ac,MU.out);MU.t=ac.currentTime+.1;MU.bar=0;MU.run=true;MU.id=setInterval(mtick,150);mtick()};
+const LOFI2={bpm:82,bar(E,t,i){const b=60/82,R=[48,45,41,43][i],V=[[60,64,67,71],[57,60,64,67],[57,60,64,65],[59,62,65,67]][i];
+ [0,1.75,2.5].forEach(p=>E.kick(t+p*b,.55,100,45));[1,3].forEach(p=>E.nz(t+p*b,.14,.3,1400,6000));E.nz(t+3.75*b,.05,.07,1400,6000);
+ for(let j=0;j<8;j++)E.nz(t+j*b/2+(j%2?.04:0),.04,j%2?.07:.11,7000,12000);
+ [0,2.5].forEach(p=>V.forEach(m=>{E.tone(m,t+p*b,b*1.3,.055,"triangle",{att:.02,lp:2500});E.tone(m+12,t+p*b,b*.5,.015,"sine")}));
+ [[0,0],[1.5,0],[2.5,7]].forEach(([p,n])=>E.tone(R+n,t+p*b,b*.7,.45,"sine"));
+ const ml=i%2?[[.5,76],[2,72],[3,74]]:[[0,72],[1.5,76],[2.5,79]];ml.forEach(([p,m])=>E.tone(m,t+p*b,b*1.2,.07,"sine",{att:.03}))}};
+const ACUS={bpm:96,bar(E,t,i){const b=60/96,R=[43,50,52,48][i],C=[[67,71,74],[66,69,74],[64,67,71],[64,67,72]][i];
+ [0,2,2.5].forEach(p=>E.kick(t+p*b,.6,100,48));[1,3].forEach(p=>E.nz(t+p*b,.08,.28,2500,7000));for(let j=0;j<8;j++)E.nz(t+j*b/2,.04,j%2?.07:.11,7500,12000);
+ if(i===3)[180,150,125,100].forEach((f,j)=>E.tom(t+3*b+j*b/4,f,.35));
+ [0,1.5,2,3].forEach(p=>C.forEach((m,x)=>E.tone(m,t+p*b+x*.02,b*.9,.05,"triangle",{lp:2600})));
+ [[0,0],[2,0],[3.5,7]].forEach(([p,n])=>E.tone(R+n,t+p*b,b*.8,.4,"sine"));
+ const ml=i%2?[[0,79],[1,76],[2,74],[3,71]]:[[0,74],[1,79],[2,83],[3,79]];ml.forEach(([p,m])=>E.tone(m,t+p*b,b*.9,.06,"sine",{att:.02}))}};
+const GCHILL={bpm:94,bar(E,t,i){const b=60/94,R=[50,43,48,41][i],V=[[62,65,69,72],[59,62,65,67],[60,64,67,71],[57,60,65,69]][i];
+ [0,1.5,2,2.75].forEach(p=>E.kick(t+p*b,.6,100,46));[1,3].forEach(p=>E.nz(t+p*b,.12,.3,1500,6500));[.75,2.75,3.5].forEach(p=>E.nz(t+p*b,.05,.08,1500,6500));
+ for(let j=0;j<16;j++)E.nz(t+j*b/4+(j%2?.03:0),.03,j%4===0?.1:.05,7500,12000);
+ [[0,0],[.75,0],[1.5,7],[2,0],[2.75,12],[3.5,7]].forEach(([p,n])=>E.tone(R+n,t+p*b,b*.35,.35,"triangle"));
+ [.5,1.75,3].forEach(p=>V.forEach(m=>E.tone(m,t+p*b,b*.35,.05,"triangle",{lp:2500})));
+ const ml=i%2?[[1,79],[2,76],[3.5,74]]:[[0,76],[1.5,72],[2.5,74]];ml.forEach(([p,m])=>E.tone(m,t+p*b,b*.9,.07,"sine"))}};
+const TKS=[[NOIR,.2],[LOFI2,.26],[ACUS,.25],[GCHILL,.27]];
+const mtick=()=>{if(!MU.run)return;const bd=240/MU.tr.bpm;while(MU.t<AC.currentTime+.6){MU.tr.bar(MU.E,MU.t,MU.bar%4);MU.t+=bd;MU.bar++}};
+const musicStart=fresh=>{MU.want=true;if(MUTED||CFG.music===false||MU.run)return;const ac=getAC();if(!ac)return;
+ if(fresh||!MU.tr){let k;do{k=Math.floor(Math.random()*TKS.length)}while(TKS.length>1&&k===MU.last);MU.last=k;MU.tr=TKS[k][0];MU.g=TKS[k][1]}
+ MU.out=ac.createGain();MU.out.gain.setValueAtTime(.0001,ac.currentTime);MU.out.gain.linearRampToValueAtTime(MU.g,ac.currentTime+1.5);MU.out.connect(ac.destination);MU.E=engine(ac,MU.out);MU.t=ac.currentTime+.1;MU.bar=0;MU.run=true;MU.id=setInterval(mtick,150);mtick()};
 const musicPause=()=>{if(!MU.run)return;MU.run=false;clearInterval(MU.id);try{const o=MU.out,ac=AC;o.gain.cancelScheduledValues(ac.currentTime);o.gain.setValueAtTime(Math.max(o.gain.value,.0001),ac.currentTime);o.gain.linearRampToValueAtTime(.0001,ac.currentTime+.6);setTimeout(()=>o.disconnect(),900)}catch(e){}};
 const musicStop=()=>{MU.want=false;musicPause()};
 const mb=document.getElementById("mus"),updMb=()=>{mb.textContent=MUTED?"🔇":"🔊";mb.title=MUTED?"Ligar o som":"Desligar o som"};
@@ -148,17 +176,17 @@ async function ranking(){clear();const w=head("RANKING");w.appendChild(el("h1",n
 async function startPlay(n,p,msg){msg.textContent="Verificando...";
  try{const x=(await getDoc(doc(db,"months",MONTH))).data();if(!x||!x.open||!x.qs||!x.qs.length)throw 0;QS=x.qs}catch(e){msg.textContent="O quiz não está disponível agora.";return}
  try{await setDoc(doc(db,"attempts",key(n)),{month:MONTH,name:n,unit:p.unit||"",score:null,ts:Date.now()})}catch(e){msg.textContent="Este nome já foi usado neste mês, está bloqueado ou não foi possível iniciar.";return}
- S={name:n,i:0,score:0};musicStart();scene()}
+ S={name:n,i:0,score:0,ok:0};musicStart(true);scene()}
 
 function scene(){clear();const q=QS[S.i],c=CH[q.w],o=shuffle(q.o.map((t,k)=>({t,ok:k===0}))),w=el("div","scene"),st=pic("padrao");
  st.appendChild(el("div","prog","Pergunta "+(S.i+1)+"/"+QS.length+" • "+S.score+" pts"));w.appendChild(st);const ov=el("div","ov");w.appendChild(ov);
  const b=el("div","box");b.appendChild(el("div","name",c.n));b.appendChild(el("p","txt",q.s));ov.appendChild(b);
  const os=el("div","opts");o.forEach(x=>{const bt=el("button","opt",x.t);bt.onclick=()=>answer(x.ok,bt,os,q,c,st,b,w);os.appendChild(bt)});ov.appendChild(os);app.appendChild(w)}
 function answer(ok,bt,os,q,c,st,b,w){[...os.children].forEach(x=>{x.disabled=true;if(x.textContent===q.o[0])x.classList.add("ok")});
- if(!ok)bt.classList.add("no");else S.score+=Math.round(100/QS.length);
+ if(!ok)bt.classList.add("no");else{S.ok=(S.ok||0)+1;S.score=Math.round(100*S.ok/QS.length)}
  st.querySelector("img").src=IMG[ok?"acerto":"erro"];snd(ok);b.textContent="";b.appendChild(el("div","name",CH.T.n));b.appendChild(el("p","txt",(ok?"Boa! ✅ ":"Quase! ❌ ")+q.e));
  const nx=el("button","btn",S.i<QS.length-1?"PRÓXIMA ▶":"VER RESULTADO ▶");nx.onclick=async()=>{S.i++;if(S.i<QS.length)scene();else{try{await updateDoc(doc(db,"attempts",key(S.name)),{score:S.score})}catch(e){}end()}};b.appendChild(nx)}
-async function end(){clear();musicStop();const sc=S.score,w=head("RESULTADO • "+label(MONTH));w.appendChild(pic(sc>=60?"acerto":"erro"));
+async function end(){clear();musicStop();if(QS.length&&S.ok===QS.length)setTimeout(sndTop,350);const sc=S.score,w=head("RESULTADO • "+label(MONTH));w.appendChild(pic(sc>=60?"acerto":"erro"));
  const b=el("div","box");b.appendChild(el("div","name","Prof. Vitor"));b.appendChild(el("p","big",sc+" pts"));
  b.appendChild(el("p","txt",sc>=90?"Parabéns, fera! Conhecimento de professor!":sc>=70?"Muito bom! É só seguir assim que é sucesso!":sc>=50?"Tá bom, mas precisa focar um pouco mais.":"Jovem, vamos estudar mais!"));w.appendChild(b);
  const rk=el("div","card");w.appendChild(rk);app.appendChild(w);let rows=[];try{rows=await attemptsOf(MONTH)}catch(e){}rank(rk,rows);
