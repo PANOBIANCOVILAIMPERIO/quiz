@@ -50,7 +50,7 @@ input[type=text],input[type=password],input[type=month],textarea,select{font:inh
 </style></head>
 <body><div class="wrap" id="app"></div>
 <button id="mus" aria-label="Som">🔊</button>
-<div id="ver">versão 14 • som de clique</div>
+<div id="ver">versão 15 • trilhas com pausa</div>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{initializeFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,collection,query,where,getDocs,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -83,7 +83,7 @@ const sndTop=()=>{if(MUTED)return;try{const ac=getAC(),t=ac.currentTime,bl=(f,at
  const nb=ac.createBuffer(1,ac.sampleRate,ac.sampleRate),nd=nb.getChannelData(0);for(let i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;
  for(let k=0;k<45;k++){const at=.6+Math.random()*1.8,s=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();s.buffer=nb;f.type="highpass";f.frequency.value=1500;g.gain.setValueAtTime(.09,t+at);g.gain.exponentialRampToValueAtTime(.001,t+at+.04);s.connect(f);f.connect(g);g.connect(ac.destination);s.start(t+at);s.stop(t+at+.05)}}catch(e){}};
 /* trilha sonora própria (estilo hip-hop noir), gerada pelo navegador */
-const MU={want:false,run:false,t:0,bar:0,id:0,out:null,E:null,tr:null,g:.2,last:-1};
+const MU={want:false,run:false,t:0,bar:0,bars:0,phase:"",restT:0,id:0,out:null,E:null,tr:null,g:.2,last:-1};
 function engine(ac,out){
  const sr=ac.sampleRate,nb=ac.createBuffer(1,sr,sr),nd=nb.getChannelData(0);let s=12345;for(let i=0;i<sr;i++){s=(s*1664525+1013904223)>>>0;nd[i]=s/2147483648-1}
  const mf=m=>440*Math.pow(2,(m-69)/12);
@@ -116,11 +116,26 @@ const GCHILL={bpm:94,bar(E,t,i){const b=60/94,R=[50,43,48,41][i],V=[[62,65,69,72
  [[0,0],[.75,0],[1.5,7],[2,0],[2.75,12],[3.5,7]].forEach(([p,n])=>E.tone(R+n,t+p*b,b*.35,.35,"triangle"));
  [.5,1.75,3].forEach(p=>V.forEach(m=>E.tone(m,t+p*b,b*.35,.05,"triangle",{lp:2500})));
  const ml=i%2?[[1,79],[2,76],[3.5,74]]:[[0,76],[1.5,72],[2.5,74]];ml.forEach(([p,m])=>E.tone(m,t+p*b,b*.9,.07,"sine"))}};
-const TKS=[[NOIR,.2],[LOFI2,.26],[ACUS,.25],[GCHILL,.27]];
-const mtick=()=>{if(!MU.run)return;const bd=240/MU.tr.bpm;while(MU.t<AC.currentTime+.6){MU.tr.bar(MU.E,MU.t,MU.bar%4);MU.t+=bd;MU.bar++}};
-const musicStart=fresh=>{MU.want=true;if(MUTED||CFG.music===false||MU.run)return;const ac=getAC();if(!ac)return;
- if(fresh||!MU.tr){let k;do{k=Math.floor(Math.random()*TKS.length)}while(TKS.length>1&&k===MU.last);MU.last=k;MU.tr=TKS[k][0];MU.g=TKS[k][1]}
- MU.out=ac.createGain();MU.out.gain.setValueAtTime(.0001,ac.currentTime);MU.out.gain.linearRampToValueAtTime(MU.g,ac.currentTime+1.5);MU.out.connect(ac.destination);MU.E=engine(ac,MU.out);MU.t=ac.currentTime+.1;MU.bar=0;MU.run=true;MU.id=setInterval(mtick,150);mtick()};
+const NUDISCO={bpm:104,bar(E,t,i){const b=60/104,R=[45,50,43,48][i],V=[[57,60,64,67],[62,65,69,72],[55,59,62,65],[60,64,67,71]][i];
+ for(let k=0;k<4;k++){E.kick(t+k*b,.5,100,48);E.nz(t+(k+.5)*b,.08,.1,7000,11000)}[1,3].forEach(p=>E.nz(t+p*b,.1,.26,1200,6000));
+ for(let j=0;j<8;j++)E.tone(R+(j%2?12:0),t+j*b/2,b*.4,.38,"triangle");
+ [.5,1.5,2.5,3.5].forEach(p=>V.forEach(m=>E.tone(m,t+p*b,b*.22,.045,"triangle",{lp:2500})));
+ const ml=i%2?[[.5,81],[1.5,79],[3,76]]:[[0,76],[1.5,79],[2.5,81]];ml.forEach(([p,m])=>E.tone(m,t+p*b,b*.9,.07,"sine",{att:.02}))}};
+const SYNTH={bpm:100,bar(E,t,i){const b=.6,R=[45,41,48,43][i],C=[[57,60,64],[57,60,65],[60,64,67],[59,62,67]][i],A=[C[0]+12,C[1]+12,C[2]+12,C[0]+24];
+ [0,2].forEach(p=>E.kick(t+p*b,.6,100,46));[1,3].forEach(p=>E.nz(t+p*b,.2,.3,1500,7000));for(let j=0;j<8;j++)E.nz(t+j*b/2,.04,.08,7500,12000);
+ C.forEach(m=>E.tone(m,t,b*3.9,.04,"sawtooth",{lp:1400,att:.4}));
+ for(let j=0;j<8;j++)E.tone(R,t+j*b/2,b*.45,.3,"sawtooth",{lp:400});
+ for(let j=0;j<16;j++)E.tone(A[[0,1,2,3,2,1,2,1,0,1,2,3,2,1,3,2][j]],t+j*b/4,b/4*.8,.045,"sawtooth",{lp:2400})}};
+const TKS=[[NOIR,.2],[LOFI2,.26],[ACUS,.25],[GCHILL,.27],[NUDISCO,.25],[SYNTH,.3]];
+const SEG=72,REST=120;/* cada trecho dura ~72 s (3 x 24 s), depois 120 s de silêncio */
+const mseg=()=>{const ac=AC;let k;do{k=Math.floor(Math.random()*TKS.length)}while(TKS.length>1&&k===MU.last);MU.last=k;MU.tr=TKS[k][0];MU.g=TKS[k][1];
+ MU.out=ac.createGain();MU.out.gain.setValueAtTime(.0001,ac.currentTime);MU.out.gain.linearRampToValueAtTime(MU.g,ac.currentTime+1.5);MU.out.connect(ac.destination);MU.E=engine(ac,MU.out);
+ MU.bars=Math.ceil(SEG/(240/MU.tr.bpm));MU.bar=0;MU.t=ac.currentTime+.1;MU.phase="play"};
+const mtick=()=>{if(!MU.run)return;const ac=AC;
+ if(MU.phase==="play"){const bd=240/MU.tr.bpm;while(MU.bar<MU.bars&&MU.t<ac.currentTime+.6){MU.tr.bar(MU.E,MU.t,MU.bar%4);MU.t+=bd;MU.bar++}
+  if(MU.bar>=MU.bars){const o=MU.out,end=MU.t;o.gain.setValueAtTime(MU.g,Math.max(end-1.6,ac.currentTime));o.gain.linearRampToValueAtTime(.0001,end);setTimeout(()=>{try{o.disconnect()}catch(e){}},Math.max(0,(end-ac.currentTime)*1000)+400);MU.phase="rest";MU.restT=end+REST}}
+ else if(MU.phase==="rest"&&ac.currentTime>=MU.restT)mseg()};
+const musicStart=fresh=>{MU.want=true;if(MUTED||CFG.music===false||MU.run)return;const ac=getAC();if(!ac)return;MU.run=true;mseg();MU.id=setInterval(mtick,150);mtick()};
 const musicPause=()=>{if(!MU.run)return;MU.run=false;clearInterval(MU.id);try{const o=MU.out,ac=AC;o.gain.cancelScheduledValues(ac.currentTime);o.gain.setValueAtTime(Math.max(o.gain.value,.0001),ac.currentTime);o.gain.linearRampToValueAtTime(.0001,ac.currentTime+.6);setTimeout(()=>o.disconnect(),900)}catch(e){}};
 const musicStop=()=>{MU.want=false;musicPause()};
 const sndClick=()=>{if(MUTED)return;try{const ac=getAC(),t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain(),o2=ac.createOscillator(),g2=ac.createGain();o.type="square";o.frequency.setValueAtTime(660,t);o.frequency.exponentialRampToValueAtTime(990,t+.05);g.gain.setValueAtTime(.1,t);g.gain.exponentialRampToValueAtTime(.001,t+.09);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+.1);
