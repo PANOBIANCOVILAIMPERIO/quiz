@@ -50,7 +50,7 @@ input[type=text],input[type=password],input[type=month],textarea,select{font:inh
 </style></head>
 <body><div class="wrap" id="app"></div>
 <button id="mus" aria-label="Som">🔊</button>
-<div id="ver">versão 17 • 1 volta + 90 s</div>
+<div id="ver">versão 18 • som ao passar o mouse</div>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{initializeFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,collection,query,where,getDocs,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -141,6 +141,8 @@ const musicStop=()=>{MU.want=false;musicPause()};
 const sndClick=()=>{if(MUTED)return;try{const ac=getAC(),t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain(),o2=ac.createOscillator(),g2=ac.createGain();o.type="square";o.frequency.setValueAtTime(660,t);o.frequency.exponentialRampToValueAtTime(990,t+.05);g.gain.setValueAtTime(.1,t);g.gain.exponentialRampToValueAtTime(.001,t+.09);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+.1);
  o2.type="triangle";o2.frequency.setValueAtTime(1320,t+.04);g2.gain.setValueAtTime(.001,t);g2.gain.setValueAtTime(.06,t+.04);g2.gain.exponentialRampToValueAtTime(.001,t+.12);o2.connect(g2);g2.connect(ac.destination);o2.start(t+.04);o2.stop(t+.13)}catch(e){}};
 app.addEventListener("click",e=>{const b=e.target.closest("button");if(!b||b.closest(".adm")||(b.classList.contains("opt")&&b.closest(".ov")))return;sndClick()});
+let _hv=0;const sndHover=()=>{if(MUTED||!AC||AC.state!=="running")return;const n=performance.now();if(n-_hv<70)return;_hv=n;try{const ac=AC,t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.setValueAtTime(1100,t);o.frequency.exponentialRampToValueAtTime(1500,t+.04);g.gain.setValueAtTime(.035,t);g.gain.exponentialRampToValueAtTime(.001,t+.06);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+.07)}catch(e){}};
+app.addEventListener("mouseover",e=>{const b=e.target.closest("button.opt");if(!b||!b.closest(".ov")||b.disabled)return;if(e.relatedTarget&&b.contains(e.relatedTarget))return;sndHover()});
 const mb=document.getElementById("mus"),updMb=()=>{mb.textContent=MUTED?"🔇":"🔊";mb.title=MUTED?"Ligar o som":"Desligar o som"};
 mb.onclick=()=>{MUTED=!MUTED;try{localStorage.setItem("muted",MUTED?"1":"0")}catch(e){}updMb();if(MUTED)musicPause();else if(MU.want)musicStart()};updMb();
 
