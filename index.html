@@ -50,7 +50,7 @@ input[type=text],input[type=password],input[type=month],textarea,select{font:inh
 </style></head>
 <body><div class="wrap" id="app"></div>
 <button id="mus" aria-label="Som">🔊</button>
-<div id="ver">versão 18 • som ao passar o mouse</div>
+<div id="ver">versão 19 • sem "Quase"</div>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{initializeFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,collection,query,where,getDocs,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -204,7 +204,7 @@ function scene(){clear();const q=QS[S.i],c=CH[q.w],o=shuffle(q.o.map((t,k)=>({t,
  const os=el("div","opts");o.forEach(x=>{const bt=el("button","opt",x.t);bt.onclick=()=>answer(x.ok,bt,os,q,c,st,b,w);os.appendChild(bt)});ov.appendChild(os);app.appendChild(w)}
 function answer(ok,bt,os,q,c,st,b,w){[...os.children].forEach(x=>{x.disabled=true;if(x.textContent===q.o[0])x.classList.add("ok")});
  if(!ok)bt.classList.add("no");else{S.ok=(S.ok||0)+1;S.score=Math.round(100*S.ok/QS.length)}
- st.querySelector("img").src=IMG[ok?"acerto":"erro"];snd(ok);b.textContent="";b.appendChild(el("div","name",CH.T.n));b.appendChild(el("p","txt",(ok?"Boa! ✅ ":"Quase! ❌ ")+q.e));
+ st.querySelector("img").src=IMG[ok?"acerto":"erro"];snd(ok);b.textContent="";b.appendChild(el("div","name",CH.T.n));b.appendChild(el("p","txt",(ok?"Boa! ✅ ":"")+q.e));
  const nx=el("button","btn",S.i<QS.length-1?"PRÓXIMA ▶":"VER RESULTADO ▶");nx.onclick=async()=>{S.i++;if(S.i<QS.length)scene();else{try{await updateDoc(doc(db,"attempts",key(S.name)),{score:S.score})}catch(e){}end()}};b.appendChild(nx)}
 async function end(){clear();musicStop();if(QS.length&&S.ok===QS.length)setTimeout(sndTop,350);const sc=S.score,w=head("RESULTADO • "+label(MONTH));w.appendChild(pic(sc>=60?"acerto":"erro"));
  const b=el("div","box");b.appendChild(el("div","name","Prof. Vitor"));b.appendChild(el("p","big",sc+" pts"));
