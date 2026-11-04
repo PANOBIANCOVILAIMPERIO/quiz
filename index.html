@@ -50,8 +50,7 @@ input[type=text],input[type=password],input[type=month],textarea,select{font:inh
 .box .btn{display:block;margin:12px 0 0 auto;padding:10px 26px}
 </style></head>
 <body><div class="wrap" id="app"></div>
-<button id="mus" aria-label="Som">🔊</button>
-<div id="ver">versão 20b • painel em abas (sem respiração)</div>
+<div id="ver">versão 20c • sem botão de som</div>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{initializeFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,collection,query,where,getDocs,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -71,7 +70,7 @@ const PL=a=>a.map(x=>typeof x==="string"?{name:x,unit:""}:x);
 const label=m=>MN[+m.split("-")[1]-1]+"/"+m.split("-")[0];
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const pic=k=>{const s=el("div","stage pic"),i=el("img");i.src=IMG[k];i.alt="";s.appendChild(i);return s};
-let AC=null,MUTED=false;try{MUTED=localStorage.getItem("muted")==="1"}catch(e){}
+let AC=null,MUTED=false;try{localStorage.removeItem("muted")}catch(e){}
 const getAC=()=>{try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume()}catch(e){}return AC};
 const unlockAudio=()=>{getAC()};
 const snd=ok=>{if(MUTED)return;try{const ac=getAC(),t=ac.currentTime,bl=(f1,f2,at,d,v,ty)=>{const o=ac.createOscillator(),g=ac.createGain();o.type=ty;o.frequency.setValueAtTime(f1,t+at);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+at+d);g.gain.setValueAtTime(v,t+at);g.gain.exponentialRampToValueAtTime(.001,t+at+d);o.connect(g);g.connect(ac.destination);o.start(t+at);o.stop(t+at+d+.02)};
@@ -147,8 +146,7 @@ const sndClick=()=>{if(MUTED)return;try{const ac=getAC(),t=ac.currentTime,o=ac.c
 app.addEventListener("click",e=>{const b=e.target.closest("button");if(!b||b.closest(".adm")||(b.classList.contains("opt")&&b.closest(".ov")))return;sndClick()});
 let _hv=0;const sndHover=()=>{if(MUTED||!AC||AC.state!=="running")return;const n=performance.now();if(n-_hv<70)return;_hv=n;try{const ac=AC,t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.setValueAtTime(1100,t);o.frequency.exponentialRampToValueAtTime(1500,t+.04);g.gain.setValueAtTime(.035,t);g.gain.exponentialRampToValueAtTime(.001,t+.06);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+.07)}catch(e){}};
 app.addEventListener("mouseover",e=>{const b=e.target.closest("button.opt");if(!b||!b.closest(".ov")||b.disabled)return;if(e.relatedTarget&&b.contains(e.relatedTarget))return;sndHover()});
-const mb=document.getElementById("mus"),updMb=()=>{mb.textContent=MUTED?"🔇":"🔊";mb.title=MUTED?"Ligar o som":"Desligar o som"};
-mb.onclick=()=>{MUTED=!MUTED;try{localStorage.setItem("muted",MUTED?"1":"0")}catch(e){}updMb();if(MUTED)musicPause();else if(MU.want)musicStart()};updMb();
+
 
 const head=t=>{const w=el("div");if(LOGO){const i=el("img","logo");i.src=LOGO;i.alt="";w.appendChild(i)}w.appendChild(el("span","tag",t));return w};
 const attemptsOf=async m=>(await getDocs(query(collection(db,"attempts"),where("month","==",m)))).docs.map(d=>({id:d.id,...d.data()}));
@@ -233,7 +231,7 @@ async function admin(m){const sy=window.scrollY;MONTH=m;const w=el("div","adm");
  const ti=el("input");ti.type="text";ti.value=CFG.title;lb("Nome do quiz",ti);const ta=el("textarea");ta.value=CFG.intro;lb("Texto da tela inicial ({n} = número de perguntas)",ta);
  const co=el("input");co.type="color";co.value=CFG.accent;lb("Cor principal",co);
  const mc=el("input");mc.type="checkbox";mc.checked=CFG.music!==false;const ml=el("label");ml.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";ml.appendChild(mc);ml.appendChild(document.createTextNode("🎵 Tocar a trilha sonora durante o quiz"));pz.appendChild(ml);
- pz.appendChild(el("p","mute","Desmarcando, a música não toca para ninguém. Os sons de acerto e erro continuam, e cada participante pode silenciar tudo no botão 🔊."));const pzm=el("p","mute","");
+ pz.appendChild(el("p","mute","Desmarcando, a música não toca para ninguém. Os sons de clique, acerto, erro e vitória continuam."));const pzm=el("p","mute","");
  const pzb=el("button","btn","💾 Salvar personalização");pzb.onclick=async()=>{try{await setDoc(doc(db,"config","site"),{title:ti.value.trim()||CFG0.title,intro:ta.value.trim()||CFG0.intro,accent:co.value,music:mc.checked});await loadSite();admin(m)}catch(e){pzm.textContent="Erro ao salvar."}};pz.appendChild(pzb);pz.appendChild(pzm);
  [["menu","Imagem da TELA INICIAL (fundo do menu)"],["padrao","Cenário PADRÃO (conversando)"],["acerto","Cenário de ACERTO"],["erro","Cenário de ERRO"],["logo","Logo (PNG com fundo transparente)"]].forEach(([k,n])=>{
   const s=el("div");s.style.cssText="margin-top:14px;border-top:1px dashed var(--mute);padding-top:10px";s.appendChild(el("b",null,n));
