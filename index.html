@@ -50,7 +50,7 @@ input[type=text],input[type=password],input[type=month],textarea,select{font:inh
 .box .btn{display:block;margin:12px 0 0 auto;padding:10px 26px}
 </style></head>
 <body><div class="wrap" id="app"></div>
-<div id="ver">versão 20c • sem botão de som</div>
+<div id="ver">versão 20e • participante primeiro</div>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{initializeFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,collection,query,where,getDocs,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -76,12 +76,16 @@ const unlockAudio=()=>{getAC()};
 const snd=ok=>{if(MUTED)return;try{const ac=getAC(),t=ac.currentTime,bl=(f1,f2,at,d,v,ty)=>{const o=ac.createOscillator(),g=ac.createGain();o.type=ty;o.frequency.setValueAtTime(f1,t+at);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+at+d);g.gain.setValueAtTime(v,t+at);g.gain.exponentialRampToValueAtTime(.001,t+at+d);o.connect(g);g.connect(ac.destination);o.start(t+at);o.stop(t+at+d+.02)};
  if(ok){[523,659,784,1047].forEach((f,k)=>bl(f,0,k*.06,k===3?.3:.1,.13,"square"));bl(2093,0,.2,.25,.04,"triangle")}
  else{[[330,0],[311,.14],[294,.28]].forEach(([f,at])=>bl(f,0,at,.12,.12,"square"));bl(277,110,.42,.5,.14,"sawtooth")}}catch(e){}};
-const sndTop=()=>{if(MUTED)return;try{const ac=getAC(),t=ac.currentTime,bl=(f,at,d,v,ty,lp)=>{const o=ac.createOscillator(),g=ac.createGain();o.type=ty;o.frequency.setValueAtTime(f,t+at);g.gain.setValueAtTime(.0001,t+at);g.gain.linearRampToValueAtTime(v,t+at+.02);g.gain.exponentialRampToValueAtTime(.001,t+at+d);let n=o;if(lp){const l=ac.createBiquadFilter();l.type="lowpass";l.frequency.value=lp;o.connect(l);n=l}n.connect(g);g.connect(ac.destination);o.start(t+at);o.stop(t+at+d+.02)};
- [523,659,784,1047,1319,1568,2093].forEach((f,k)=>bl(f,k*.07,.18,.12,"square"));
- [523,659,784,1047].forEach(f=>bl(f,.55,1.5,.07,"sawtooth",2500));bl(131,.55,1.5,.25,"sine");bl(262,.55,1.5,.12,"triangle");
- [2093,2637,3136,3951,3136,2637,3951,4186].forEach((f,k)=>bl(f,.8+k*.14,.3,.035,"sine"));
- const nb=ac.createBuffer(1,ac.sampleRate,ac.sampleRate),nd=nb.getChannelData(0);for(let i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;
- for(let k=0;k<45;k++){const at=.6+Math.random()*1.8,s=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();s.buffer=nb;f.type="highpass";f.frequency.value=1500;g.gain.setValueAtTime(.09,t+at);g.gain.exponentialRampToValueAtTime(.001,t+at+.04);s.connect(f);f.connect(g);g.connect(ac.destination);s.start(t+at);s.stop(t+at+.05)}}catch(e){}};
+const VICT=(E,t)=>{const b=.4;
+ [90,100,110,125,140,160,180,200].forEach((f,j)=>E.tom(t+j*b/2,f,.45));for(let j=0;j<16;j++)E.nz(t+j*b/4,.05,.06+j*.02,1800,8000);E.kick(t,.9,130,42);
+ const bar=(T,R,mel)=>{[0,.5,2,2.5,3.5].forEach(p=>E.kick(T+p*b,.9,130,42));[1,3].forEach(p=>E.nz(T+p*b,.12,.45,1800,8000));
+  for(let j=0;j<8;j++){E.nz(T+j*b/2,.04,.12,7500);E.tone(R+12,T+j*b/2,b*.3,.09,"sawtooth",{lp:1800});E.tone(R+19,T+j*b/2,b*.3,.07,"sawtooth",{lp:1800});E.tone(R,T+j*b/2,b*.4,.45,"triangle")}
+  mel.forEach(([p,n,d])=>{E.tone(n,T+p*b,b*d,.09,"square",{lp:4000,att:.02});E.tone(n,T+p*b,b*d,.04,"sawtooth",{lp:2500})})};
+ bar(t+4*b,48,[[0,79,1.5],[1.5,84,.5],[2,88,1],[3,91,1]]);bar(t+8*b,43,[[0,96,1],[1,91,.5],[1.5,88,.5],[2,91,1],[3,96,1]]);
+ const F=t+12*b;[48,55,60,64,67].forEach(m=>E.tone(m,F,b*3,.07,"sawtooth",{lp:2200}));E.tone(96,F,b*3,.07,"square",{lp:4000});E.kick(F,.95,130,42);E.kick(F+.2,.8,130,42);E.tom(F,90,.5);E.nz(F,1.4,.32,4500,12000);return F+b*3};
+let VOUT=null;
+const sndTop=()=>{if(MUTED)return;try{const ac=getAC(),out=ac.createGain();out.gain.setValueAtTime(.22,ac.currentTime);out.connect(ac.destination);VOUT=out;VICT(engine(ac,out),ac.currentTime+.05)}catch(e){}};
+const stopVic=()=>{if(!VOUT)return;try{const o=VOUT,ac=AC;o.gain.cancelScheduledValues(ac.currentTime);o.gain.setValueAtTime(Math.max(o.gain.value,.0001),ac.currentTime);o.gain.linearRampToValueAtTime(.0001,ac.currentTime+.3);setTimeout(()=>o.disconnect(),500)}catch(e){}VOUT=null};
 /* trilha sonora própria (estilo hip-hop noir), gerada pelo navegador */
 const MU={want:false,run:false,t:0,bar:0,bars:0,phase:"",restT:0,id:0,out:null,E:null,tr:null,g:.2,last:-1};
 function engine(ac,out){
@@ -161,7 +165,7 @@ async function loadSite(){try{const s=(await getDoc(doc(db,"config","site"))).da
  document.documentElement.style.setProperty("--acc",CFG.accent)}
 const shrink=(f,mw,ty,q)=>new Promise((ok,no)=>{const u=URL.createObjectURL(f),i=new Image();i.onload=()=>{const s=Math.min(1,mw/i.width),c=document.createElement("canvas");c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext("2d").drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL(ty,q))};i.onerror=no;i.src=u});
 let OPEN=false,DBERR="",QN=0;const T=(p,ms=8000)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(Object.assign(new Error("tempo esgotado"),{code:"timeout"})),ms))]);
-async function boot(){musicStop();clear();app.appendChild(el("p","mute","Carregando..."));try{await T(loadSite(),10000)}catch(e){}OPEN=false;QS=[];QN=0;DBERR="";
+async function boot(){musicStop();stopVic();clear();app.appendChild(el("p","mute","Carregando..."));try{await T(loadSite(),10000)}catch(e){}OPEN=false;QS=[];QN=0;DBERR="";
  try{const x=(await T(getDoc(doc(db,"months",MONTH)))).data();if(x&&x.open&&x.qs&&x.qs.length){QN=x.qs.length;OPEN=true}}catch(e){if(e&&e.code!=="permission-denied")DBERR="Sem conexão com o banco de dados ("+(e.code||e.message)+"). Tente atualizar a página."}
  menu()}
 function menu(){clear();const m=el("div","menu");m.style.backgroundImage='url("'+(IMG.menu||IMG.padrao)+'")';
@@ -177,10 +181,10 @@ async function pick(){clear();const w=head("QUIZ MENSAL • "+label(MONTH));w.ap
  const used=new Set(rows.map(r=>r.name)),free=ppl.filter(p=>!used.has(p.name)&&unl.includes(p.name)),msg=el("p","mute","");
  if(!ppl.length)w.appendChild(el("p","mute","Os participantes ainda não foram cadastrados."));
  else if(!free.length)w.appendChild(el("p","mute","Nenhum participante liberado no momento. Aguarde o administrador liberar o seu acesso (ou você já jogou neste mês)."));
- else{const us=[...new Set(free.map(p=>p.unit).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt")),su=el("select"),sn=el("select");
-  const fill=()=>{sn.textContent="";const o0=el("option",null,"Selecione seu nome");o0.value="";sn.appendChild(o0);free.filter(p=>!su.value||p.unit===su.value).sort((a,b)=>a.name.localeCompare(b.name,"pt")).forEach(p=>{const o=el("option",null,p.name);o.value=p.name;sn.appendChild(o)})};
-  const u0=el("option",null,"Todas as unidades");u0.value="";su.appendChild(u0);us.forEach(u=>{const o=el("option",null,u);o.value=u;su.appendChild(o)});su.onchange=fill;fill();
-  if(us.length){w.appendChild(el("div","mute","Sua unidade"));w.appendChild(su)}w.appendChild(el("div","mute","Seu nome"));w.appendChild(sn);
+ else{const sn=el("select"),o0=el("option",null,"Selecione seu nome");o0.value="";sn.appendChild(o0);
+  free.slice().sort((a,b)=>a.name.localeCompare(b.name,"pt")).forEach(p=>{const o=el("option",null,p.name);o.value=p.name;sn.appendChild(o)});
+  const ut=el("div","mute","");ut.style.cssText="font-weight:bold;margin:8px 0;min-height:20px";sn.onchange=()=>{const p=free.find(x=>x.name===sn.value);ut.textContent=p&&p.unit?"Unidade: "+p.unit:""};
+  w.appendChild(el("div","mute","Seu nome"));w.appendChild(sn);w.appendChild(ut);
   const go=el("button","btn","▶ COMEÇAR");go.onclick=()=>{const n=sn.value;if(!n)return;unlockAudio();startPlay(n,free.find(x=>x.name===n),msg)};
   w.appendChild(go);w.appendChild(msg)}
  const bk=el("button","opt","⌂ Voltar ao menu");bk.style.marginTop="16px";bk.onclick=menu;w.appendChild(bk);app.appendChild(w)}
