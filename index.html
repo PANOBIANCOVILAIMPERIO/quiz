@@ -41,6 +41,7 @@ input[type=text],input[type=password],input[type=month],textarea,select{font:inh
 .menu{position:relative;min-height:calc(100vh - 28px);border:3px solid var(--ink);border-radius:14px;background:#120d24 center 25%/cover no-repeat;display:flex;flex-direction:column;justify-content:flex-end;padding:20px;overflow:hidden}.menu::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#0000 0%,#0000 45%,#000d 100%)}.menu>*{position:relative}.menu>div:first-child{margin-bottom:18px}.menu h1{color:#fff;text-shadow:0 3px 10px #000;font-size:34px}.mbtns{display:grid;gap:12px}.mbtn{font:inherit;font-size:20px;font-weight:bold;letter-spacing:2px;padding:14px;border:3px solid #fff;background:var(--acc);color:#fff;border-radius:6px;transform:skewX(-6deg);cursor:pointer}.mbtn.alt{background:#000a}.mbtn:hover{filter:brightness(1.15)}.mmsg{color:#fff;text-align:center;min-height:20px;text-shadow:0 2px 6px #000;margin:0}@media (max-height:760px){.mbtn{padding:9px;font-size:17px}.menu h1{font-size:28px;margin:6px 0}.mbtns{gap:8px}}.logo{max-height:70px;max-width:60%;display:block;margin:6px auto}
 #mus{position:fixed;left:10px;bottom:6px;z-index:6;width:38px;height:38px;border-radius:50%;border:1px solid #fff8;background:#000a;color:#fff;font-size:18px;cursor:pointer}
 .tabs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}.tb{font:inherit;font-weight:bold;padding:9px 14px;border:2px solid var(--ink);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer}.tb.on{background:var(--acc);border-color:var(--acc);color:#fff}.bar0{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.bar0 input{width:auto;margin:0}.bar0 p{margin:0;flex:1 1 220px}.bar0 .btn{margin:0}.bar0 b{margin-right:4px}
+.rv{pointer-events:none}.btn:disabled,.opt:disabled{opacity:.4}.rvw{max-width:900px;margin:0 auto}
 #ver{position:fixed;right:8px;bottom:4px;font-size:11px;color:#777;z-index:5;pointer-events:none}
 .opts{grid-template-columns:1fr}
 @media (min-width:640px){.opts{grid-template-columns:1fr 1fr;gap:10px}}
@@ -50,7 +51,7 @@ input[type=text],input[type=password],input[type=month],textarea,select{font:inh
 .box .btn{display:block;margin:12px 0 0 auto;padding:10px 26px}
 </style></head>
 <body><div class="wrap" id="app"></div>
-<div id="ver">versão 20e • participante primeiro</div>
+<div id="ver">versão 20h • revisão das respostas</div>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{initializeFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,collection,query,where,getDocs,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -63,7 +64,7 @@ const CH={T:{n:"Prof. Vitor"},L:{n:"Participante"}};
 const MN=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"],_d=new Date(),TODAY=_d.getFullYear()+"-"+("0"+(_d.getMonth()+1)).slice(-2);
 let MONTH=TODAY,QS=[],S={name:"",i:0,score:0};const app=document.getElementById("app");
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
-const clear=()=>{app.textContent=""};
+let REV=-1;const clear=()=>{app.textContent="";REV=-1};
 const norm=n=>n.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
 const key=n=>MONTH+"_"+norm(n).replace(/ /g,"-");
 const PL=a=>a.map(x=>typeof x==="string"?{name:x,unit:""}:x);
@@ -85,6 +86,16 @@ const VICT=(E,t)=>{const b=.4;
  const F=t+12*b;[48,55,60,64,67].forEach(m=>E.tone(m,F,b*3,.07,"sawtooth",{lp:2200}));E.tone(96,F,b*3,.07,"square",{lp:4000});E.kick(F,.95,130,42);E.kick(F+.2,.8,130,42);E.tom(F,90,.5);E.nz(F,1.4,.32,4500,12000);return F+b*3};
 let VOUT=null;
 const sndTop=()=>{if(MUTED)return;try{const ac=getAC(),out=ac.createGain();out.gain.setValueAtTime(.22,ac.currentTime);out.connect(ac.destination);VOUT=out;VICT(engine(ac,out),ac.currentTime+.05)}catch(e){}};
+const LOWS=(ac,out,t)=>{const n=(f,at,d,end)=>{const o=ac.createOscillator(),o2=ac.createOscillator(),g=ac.createGain(),l=ac.createBiquadFilter(),lfo=ac.createOscillator(),lg=ac.createGain(),g2=ac.createGain();o.type="sawtooth";o2.type="square";o.frequency.setValueAtTime(f,t+at);o2.frequency.setValueAtTime(f,t+at);
+  if(end){[o,o2].forEach(x=>{x.frequency.setValueAtTime(f,t+at+d*.4);x.frequency.exponentialRampToValueAtTime(f*.8,t+at+d)})}
+  lfo.frequency.value=5.5;lg.gain.value=end?f*.03:0;lfo.connect(lg);lg.connect(o.frequency);lg.connect(o2.frequency);l.type="lowpass";l.frequency.value=1000;
+  g.gain.setValueAtTime(.0001,t+at);g.gain.linearRampToValueAtTime(.35,t+at+.05);g.gain.setValueAtTime(.3,t+at+d-.08);g.gain.linearRampToValueAtTime(.0001,t+at+d);g2.gain.value=.25;o.connect(l);o2.connect(g2);g2.connect(l);l.connect(g);g.connect(out);
+  o.start(t+at);o2.start(t+at);lfo.start(t+at);o.stop(t+at+d+.02);o2.stop(t+at+d+.02);lfo.stop(t+at+d+.02)};
+ [[233,0,.42],[220,.45,.42],[208,.9,.42]].forEach(([f,a,d])=>n(f,a,d,false));n(196,1.35,1.5,true)};
+const MIDS=(ac,out,t)=>{const o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.setValueAtTime(500,t);o.frequency.exponentialRampToValueAtTime(1800,t+.4);g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.25,t+.03);g.gain.setValueAtTime(.25,t+.35);g.gain.linearRampToValueAtTime(.0001,t+.45);o.connect(g);g.connect(out);o.start(t);o.stop(t+.5);
+ const E=engine(ac,out);E.tom(t+.6,220,.8);E.tom(t+.78,160,.8);E.kick(t+1.0,.9,150,45);E.nz(t+1.0,1.1,.5,4500,12000);E.nz(t+1.0,.15,.5,1500,9000)};
+const funny=(fn,gain)=>{if(MUTED)return;try{const ac=getAC(),out=ac.createGain();out.gain.setValueAtTime(gain,ac.currentTime);out.connect(ac.destination);VOUT=out;fn(ac,out,ac.currentTime+.05)}catch(e){}};
+const sndLow=()=>funny(LOWS,.71),sndMid=()=>funny(MIDS,.2);
 const stopVic=()=>{if(!VOUT)return;try{const o=VOUT,ac=AC;o.gain.cancelScheduledValues(ac.currentTime);o.gain.setValueAtTime(Math.max(o.gain.value,.0001),ac.currentTime);o.gain.linearRampToValueAtTime(.0001,ac.currentTime+.3);setTimeout(()=>o.disconnect(),500)}catch(e){}VOUT=null};
 /* trilha sonora própria (estilo hip-hop noir), gerada pelo navegador */
 const MU={want:false,run:false,t:0,bar:0,bars:0,phase:"",restT:0,id:0,out:null,E:null,tr:null,g:.2,last:-1};
@@ -160,7 +171,7 @@ function rank(box,rows){box.textContent="";box.appendChild(el("b",null,"🏆 Ran
  const ul=el("ol","rank");r.forEach((x,k)=>{const li=el("li",x.name===S.name?"me":"");li.appendChild(el("span","p",(k+1)+"º"));li.appendChild(el("span","n",String(x.name)));li.appendChild(el("span",null,x.score+" pts"));ul.appendChild(li)});box.appendChild(ul)}
 
 async function loadSite(){try{const s=(await getDoc(doc(db,"config","site"))).data();CFG={...CFG0,...(s||{})}}catch(e){}
- for(const k of ["padrao","acerto","erro","menu"]){try{const d=(await getDoc(doc(db,"config","img_"+k))).data();IMG[k]=d&&d.src?d.src:DEF[k]}catch(e){}}
+ for(const k of ["padrao","acerto","erro","menu","res1","res2","res3"]){try{const d=(await getDoc(doc(db,"config","img_"+k))).data();IMG[k]=d&&d.src?d.src:DEF[k]}catch(e){}}
  try{const d=(await getDoc(doc(db,"config","img_logo"))).data();LOGO=d&&d.src||null}catch(e){}
  document.documentElement.style.setProperty("--acc",CFG.accent)}
 const shrink=(f,mw,ty,q)=>new Promise((ok,no)=>{const u=URL.createObjectURL(f),i=new Image();i.onload=()=>{const s=Math.min(1,mw/i.width),c=document.createElement("canvas");c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext("2d").drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL(ty,q))};i.onerror=no;i.src=u});
@@ -189,6 +200,14 @@ async function pick(){clear();const w=head("QUIZ MENSAL • "+label(MONTH));w.ap
   w.appendChild(go);w.appendChild(msg)}
  const bk=el("button","opt","⌂ Voltar ao menu");bk.style.marginTop="16px";bk.onclick=menu;w.appendChild(bk);app.appendChild(w)}
 
+function review(i){clear();const H=S.hist||[],h=H[i];if(!h)return end(true);REV=i;const w=head("REVISÃO • Pergunta "+(i+1)+" de "+H.length);w.classList.add("rvw");w.appendChild(el("h1",null,h.ok?"✅ Você acertou":"❌ Você errou"));
+ const b=el("div","box");b.appendChild(el("div","name",CH.T.n));b.appendChild(el("p","txt",h.q.s));w.appendChild(b);
+ const os=el("div","opts");h.o.forEach(x=>{const c=x===h.q.o[0],mine=x===h.pick;os.appendChild(el("div","opt rv"+(c?" ok":mine?" no":""),(c?"✅ Correta: ":mine?"❌ Sua resposta: ":"")+x+(c&&mine?"  (sua resposta)":"")))});w.appendChild(os);
+ const e=el("div","box");e.style.marginTop="14px";e.appendChild(el("div","name",CH.T.n));e.appendChild(el("p","txt",h.q.e));w.appendChild(e);
+ const nv=el("div");nv.style.cssText="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap";
+ const pv=el("button","opt","◀ Anterior"),nx=el("button","btn","Próxima ▶"),bk=el("button","opt","⌂ Voltar ao resultado");pv.style.margin="12px 0 0";nx.style.margin="12px 0 0";bk.style.margin="12px 0 0 auto";
+ pv.disabled=i===0;nx.disabled=i===H.length-1;pv.onclick=()=>review(i-1);nx.onclick=()=>review(i+1);bk.onclick=()=>end(true);[pv,nx,bk].forEach(x=>nv.appendChild(x));w.appendChild(nv);app.appendChild(w);REV=i}
+document.addEventListener("keydown",e=>{if(REV<0)return;if(e.key==="ArrowRight")review(REV+1);else if(e.key==="ArrowLeft"&&REV>0)review(REV-1)});
 async function ranking(){clear();const w=head("RANKING");w.appendChild(el("h1",null,"🏆 Ranking"));const Y=TODAY.slice(0,4),sel=el("select");
  [["year","Acumulado do ano "+Y]].concat(MN.map((n,i)=>[Y+"-"+("0"+(i+1)).slice(-2),n+"/"+Y])).forEach(([v,n])=>{const o=el("option",null,n);o.value=v;sel.appendChild(o)});
  const fi=el("input");fi.type="text";fi.placeholder="Buscar nome ou unidade";const box=el("div","card");let data=[];
@@ -202,22 +221,22 @@ async function ranking(){clear();const w=head("RANKING");w.appendChild(el("h1",n
 async function startPlay(n,p,msg){msg.textContent="Verificando...";
  try{const x=(await getDoc(doc(db,"months",MONTH))).data();if(!x||!x.open||!x.qs||!x.qs.length)throw 0;QS=x.qs}catch(e){msg.textContent="O quiz não está disponível agora.";return}
  try{await setDoc(doc(db,"attempts",key(n)),{month:MONTH,name:n,unit:p.unit||"",score:null,ts:Date.now()})}catch(e){msg.textContent="Este nome já foi usado neste mês, está bloqueado ou não foi possível iniciar.";return}
- S={name:n,i:0,score:0,ok:0};musicStart(true);scene()}
+ S={name:n,i:0,score:0,ok:0,hist:[]};musicStart(true);scene()}
 
 function scene(){clear();const q=QS[S.i],c=CH[q.w],o=shuffle(q.o.map((t,k)=>({t,ok:k===0}))),w=el("div","scene"),st=pic("padrao");
  st.appendChild(el("div","prog","Pergunta "+(S.i+1)+"/"+QS.length+" • "+S.score+" pts"));w.appendChild(st);const ov=el("div","ov");w.appendChild(ov);
  const b=el("div","box");b.appendChild(el("div","name",c.n));b.appendChild(el("p","txt",q.s));ov.appendChild(b);
  const os=el("div","opts");o.forEach(x=>{const bt=el("button","opt",x.t);bt.onclick=()=>answer(x.ok,bt,os,q,c,st,b,w);os.appendChild(bt)});ov.appendChild(os);app.appendChild(w)}
-function answer(ok,bt,os,q,c,st,b,w){[...os.children].forEach(x=>{x.disabled=true;if(x.textContent===q.o[0])x.classList.add("ok")});
+function answer(ok,bt,os,q,c,st,b,w){(S.hist=S.hist||[]).push({q,o:[...os.children].map(x=>x.textContent),pick:bt.textContent,ok});[...os.children].forEach(x=>{x.disabled=true;if(x.textContent===q.o[0])x.classList.add("ok")});
  if(!ok)bt.classList.add("no");else{S.ok=(S.ok||0)+1;S.score=Math.round(100*S.ok/QS.length)}
  st.querySelector("img").src=IMG[ok?"acerto":"erro"];snd(ok);b.textContent="";b.appendChild(el("div","name",CH.T.n));b.appendChild(el("p","txt",(ok?"Boa! ✅ ":"")+q.e));
  const nx=el("button","btn",S.i<QS.length-1?"PRÓXIMA ▶":"VER RESULTADO ▶");nx.onclick=async()=>{S.i++;if(S.i<QS.length)scene();else{try{await updateDoc(doc(db,"attempts",key(S.name)),{score:S.score})}catch(e){}end()}};b.appendChild(nx)}
-async function end(){clear();musicStop();if(QS.length&&S.ok===QS.length)setTimeout(sndTop,350);const sc=S.score,w=head("RESULTADO • "+label(MONTH));w.appendChild(pic(sc>=60?"acerto":"erro"));
+async function end(again){clear();musicStop();if(!again){if(QS.length&&S.ok===QS.length)setTimeout(sndTop,350);else setTimeout(S.score<50?sndLow:sndMid,350)}const sc=S.score,w=head("RESULTADO • "+label(MONTH));{const rk=sc>=100?"res3":sc>=50?"res2":"res1";w.appendChild(pic(IMG[rk]?rk:(sc>=60?"acerto":"erro")))};
  const b=el("div","box");b.appendChild(el("div","name","Prof. Vitor"));b.appendChild(el("p","big",sc+" pts"));
  b.appendChild(el("p","txt",sc>=90?"Parabéns, fera! Conhecimento de professor!":sc>=70?"Muito bom! É só seguir assim que é sucesso!":sc>=50?"Tá bom, mas precisa focar um pouco mais.":"Jovem, vamos estudar mais!"));w.appendChild(b);
  const rk=el("div","card");w.appendChild(rk);app.appendChild(w);let rows=[];try{rows=await attemptsOf(MONTH)}catch(e){}rank(rk,rows);
  w.appendChild(el("p","mute","Você já jogou neste mês. O próximo quiz será liberado no mês que vem."));
- const r1=el("button","btn","🏆 Ver ranking do ano");r1.onclick=ranking;const r2=el("button","opt","⌂ Menu");r2.style.marginTop="12px";r2.onclick=boot;w.appendChild(r1);w.appendChild(r2)}
+ const r1=el("button","btn","🏆 Ver ranking do ano");r1.onclick=ranking;const r2=el("button","opt","⌂ Menu");r2.style.marginTop="12px";r2.onclick=boot;if(S.hist&&S.hist.length){const rv=el("button","btn","📖 Revisar minhas respostas");rv.onclick=()=>review(0);w.appendChild(rv)}w.appendChild(r1);w.appendChild(r2)}
 
 function login(){clear();const w=el("div");w.appendChild(el("h1",null,"🔒 Administrador"));const pw=el("input"),msg=el("p","mute","");pw.type="password";pw.placeholder="Senha";pw.autocomplete="current-password";
  const go=el("button","btn","Entrar");const run=async()=>{msg.textContent="";try{await signInWithEmailAndPassword(auth,ADMIN_EMAIL,pw.value);admin(TODAY)}catch(e){msg.textContent=e&&e.code==="auth/too-many-requests"?"Muitas tentativas. Aguarde alguns minutos.":"Senha incorreta."}};
@@ -237,9 +256,9 @@ async function admin(m){const sy=window.scrollY;MONTH=m;const w=el("div","adm");
  const mc=el("input");mc.type="checkbox";mc.checked=CFG.music!==false;const ml=el("label");ml.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";ml.appendChild(mc);ml.appendChild(document.createTextNode("🎵 Tocar a trilha sonora durante o quiz"));pz.appendChild(ml);
  pz.appendChild(el("p","mute","Desmarcando, a música não toca para ninguém. Os sons de clique, acerto, erro e vitória continuam."));const pzm=el("p","mute","");
  const pzb=el("button","btn","💾 Salvar personalização");pzb.onclick=async()=>{try{await setDoc(doc(db,"config","site"),{title:ti.value.trim()||CFG0.title,intro:ta.value.trim()||CFG0.intro,accent:co.value,music:mc.checked});await loadSite();admin(m)}catch(e){pzm.textContent="Erro ao salvar."}};pz.appendChild(pzb);pz.appendChild(pzm);
- [["menu","Imagem da TELA INICIAL (fundo do menu)"],["padrao","Cenário PADRÃO (conversando)"],["acerto","Cenário de ACERTO"],["erro","Cenário de ERRO"],["logo","Logo (PNG com fundo transparente)"]].forEach(([k,n])=>{
+ [["menu","Imagem da TELA INICIAL (fundo do menu)"],["res1","Resultado final: pontuação BAIXA (menos de 50)"],["res2","Resultado final: pontuação MÉDIA (50 a 99)"],["res3","Resultado final: 100 PONTOS"],["padrao","Cenário PADRÃO (conversando)"],["acerto","Cenário de ACERTO"],["erro","Cenário de ERRO"],["logo","Logo (PNG com fundo transparente)"]].forEach(([k,n])=>{
   const s=el("div");s.style.cssText="margin-top:14px;border-top:1px dashed var(--mute);padding-top:10px";s.appendChild(el("b",null,n));
-  const cur=k==="logo"?LOGO:IMG[k];if(cur){const im=el("img");im.src=cur;im.style.cssText="display:block;max-width:260px;width:100%;margin:6px 0;background:#888;object-fit:contain;aspect-ratio:"+(k==="menu"?"9/16":k==="logo"?"3/1":"16/9")+";";s.appendChild(im)}else s.appendChild(el("p","mute",k==="menu"?"Nenhuma imagem enviada (usando o cenário padrão).":"Nenhum logo enviado."));
+  const cur=k==="logo"?LOGO:IMG[k];if(cur){const im=el("img");im.src=cur;im.style.cssText="display:block;max-width:260px;width:100%;margin:6px 0;background:#888;object-fit:contain;aspect-ratio:"+(k==="menu"?"9/16":k==="logo"?"3/1":"16/9")+";";s.appendChild(im)}else s.appendChild(el("p","mute",k==="menu"?"Nenhuma imagem enviada (usando o cenário padrão).":k.startsWith("res")?"Nenhuma imagem enviada (usa a imagem padrão de acerto ou de erro).":"Nenhum logo enviado."));
   const fi=el("input");fi.type="file";fi.accept="image/*";const fm=el("p","mute",k==="logo"?"Reduzido automaticamente.":k==="menu"?"Use 1080×1920 (vertical, 9:16).":"Use 1280×720 (16:9).");
   fi.onchange=async()=>{const f=fi.files[0];if(!f)return;fm.textContent="Enviando...";try{const lg=k==="logo",ty=lg?"image/png":"image/jpeg";let src=await shrink(f,lg?400:1280,ty,.82);if(src.length>900000)src=await shrink(f,lg?250:900,ty,.7);if(src.length>900000){fm.textContent="Imagem pesada demais.";return}await setDoc(doc(db,"config","img_"+k),{src});await loadSite();admin(m)}catch(e){fm.textContent="Erro ao enviar a imagem."}};
   s.appendChild(fi);s.appendChild(fm);const rs=el("button","opt","Restaurar padrão");rs.onclick=async()=>{try{await deleteDoc(doc(db,"config","img_"+k));await loadSite();admin(m)}catch(e){fm.textContent="Erro."}};s.appendChild(rs);pz.appendChild(s)});
