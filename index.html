@@ -41,7 +41,7 @@ input[type=text],input[type=password],input[type=month],textarea,select{font:inh
 .menu{position:relative;min-height:calc(100vh - 28px);border:3px solid var(--ink);border-radius:14px;background:#120d24 center 25%/cover no-repeat;display:flex;flex-direction:column;justify-content:flex-end;padding:20px;overflow:hidden}.menu::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#0000 0%,#0000 45%,#000d 100%)}.menu>*{position:relative}.menu>div:first-child{margin-bottom:18px}.menu h1{color:#fff;text-shadow:0 3px 10px #000;font-size:34px}.mbtns{display:grid;gap:12px}.mbtn{font:inherit;font-size:20px;font-weight:bold;letter-spacing:2px;padding:14px;border:3px solid #fff;background:var(--acc);color:#fff;border-radius:6px;transform:skewX(-6deg);cursor:pointer}.mbtn.alt{background:#000a}.mbtn:hover{filter:brightness(1.15)}.mmsg{color:#fff;text-align:center;min-height:20px;text-shadow:0 2px 6px #000;margin:0}@media (max-height:760px){.mbtn{padding:9px;font-size:17px}.menu h1{font-size:28px;margin:6px 0}.mbtns{gap:8px}}.logo{max-height:70px;max-width:60%;display:block;margin:6px auto}
 #mus{position:fixed;left:10px;bottom:6px;z-index:6;width:38px;height:38px;border-radius:50%;border:1px solid #fff8;background:#000a;color:#fff;font-size:18px;cursor:pointer}
 .tabs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}.tb{font:inherit;font-weight:bold;padding:9px 14px;border:2px solid var(--ink);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer}.tb.on{background:var(--acc);border-color:var(--acc);color:#fff}.bar0{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.bar0 input{width:auto;margin:0}.bar0 p{margin:0;flex:1 1 220px}.bar0 .btn{margin:0}.bar0 b{margin-right:4px}
-.rv{pointer-events:none}.btn:disabled,.opt:disabled{opacity:.4}.rvw{max-width:900px;margin:0 auto}
+.rv{pointer-events:none}.rvw .btn:disabled,.rvw .opt:disabled{opacity:.4}.rvw{max-width:900px;margin:0 auto}
 #ver{position:fixed;right:8px;bottom:4px;font-size:11px;color:#777;z-index:5;pointer-events:none}
 .opts{grid-template-columns:1fr}
 @media (min-width:640px){.opts{grid-template-columns:1fr 1fr;gap:10px}}
@@ -51,7 +51,7 @@ input[type=text],input[type=password],input[type=month],textarea,select{font:inh
 .box .btn{display:block;margin:12px 0 0 auto;padding:10px 26px}
 </style></head>
 <body><div class="wrap" id="app"></div>
-<div id="ver">versão 20h • revisão das respostas</div>
+<div id="ver">versão 20i • respostas com cor normal</div>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{initializeFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,collection,query,where,getDocs,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
