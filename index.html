@@ -52,24 +52,22 @@ input[type=text],input[type=password],input[type=month],textarea,select{font:inh
 
 :root{--bg:#120d24;--card:#1e1736;--ink:#f1ecff;--mute:#a79fc4;--box:#0a0716}
 body{background:#0b0716}
-.bgb,.fg{display:none}
+.menu{background-image:var(--bgv)}
 #fsb{display:none;position:fixed;top:8px;left:8px;z-index:6;width:38px;height:38px;border-radius:8px;border:1px solid #fff8;background:#000a;color:#fff;font-size:18px;cursor:pointer}
 @media (min-width:900px){
  .wrap{max-width:none;padding:0;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center}
  .wrap>div:not(.scene):not(.menu){width:100%;max-width:1100px;padding:20px}
  .scene{width:min(100vw,calc(100vh*16/9));margin:0;min-height:0}
  .scene>.stage{border:none;border-radius:0}
- .menu{width:100vw;height:100vh;min-height:0;max-width:none;margin:0;border:none;border-radius:0;background-image:none!important;background-color:#000}
- .bgb{display:block;position:absolute;inset:-40px;background-size:cover;background-position:center;filter:blur(28px) brightness(.55);z-index:0}
- .fg{display:block;position:absolute;top:0;bottom:0;left:50%;width:calc(100vh*9/16);transform:translateX(-50%);background-size:cover;background-position:center;z-index:1}
+ .menu{width:100vw;height:100vh;min-height:0;max-width:none;margin:0;border:none;border-radius:0;background-color:#000;background-image:var(--bgh);background-size:cover;background-position:center 25%}
  .menu::before{z-index:2}
- .menu>.mbtns,.menu>div:first-child{z-index:3;width:min(100%,calc(100vh*9/16 - 40px));margin-left:auto;margin-right:auto}
+ .menu>.mbtns,.menu>div:first-child{z-index:3;width:min(100%,560px);margin-left:auto;margin-right:auto}
  #fsb{display:block}
 }
 </style></head>
 <body><div class="wrap" id="app"></div>
 <button id="fsb" title="Tela cheia">⛶</button>
-<div id="ver">versão 20j • tela cheia</div>
+<div id="ver">versão 20k • tela inicial preenchendo</div>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{initializeFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,collection,query,where,getDocs,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -193,7 +191,7 @@ function rank(box,rows){box.textContent="";box.appendChild(el("b",null,"🏆 Ran
  const ul=el("ol","rank");r.forEach((x,k)=>{const li=el("li",x.name===S.name?"me":"");li.appendChild(el("span","p",(k+1)+"º"));li.appendChild(el("span","n",String(x.name)));li.appendChild(el("span",null,x.score+" pts"));ul.appendChild(li)});box.appendChild(ul)}
 
 async function loadSite(){try{const s=(await getDoc(doc(db,"config","site"))).data();CFG={...CFG0,...(s||{})}}catch(e){}
- for(const k of ["padrao","acerto","erro","menu","res1","res2","res3"]){try{const d=(await getDoc(doc(db,"config","img_"+k))).data();IMG[k]=d&&d.src?d.src:DEF[k]}catch(e){}}
+ for(const k of ["padrao","acerto","erro","menu","menuh","res1","res2","res3"]){try{const d=(await getDoc(doc(db,"config","img_"+k))).data();IMG[k]=d&&d.src?d.src:DEF[k]}catch(e){}}
  try{const d=(await getDoc(doc(db,"config","img_logo"))).data();LOGO=d&&d.src||null}catch(e){}
  document.documentElement.style.setProperty("--acc",CFG.accent)}
 const shrink=(f,mw,ty,q)=>new Promise((ok,no)=>{const u=URL.createObjectURL(f),i=new Image();i.onload=()=>{const s=Math.min(1,mw/i.width),c=document.createElement("canvas");c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext("2d").drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL(ty,q))};i.onerror=no;i.src=u});
@@ -201,12 +199,12 @@ let OPEN=false,DBERR="",QN=0;const T=(p,ms=8000)=>Promise.race([p,new Promise((_
 async function boot(){musicStop();stopVic();clear();app.appendChild(el("p","mute","Carregando..."));try{await T(loadSite(),10000)}catch(e){}OPEN=false;QS=[];QN=0;DBERR="";
  try{const x=(await T(getDoc(doc(db,"months",MONTH)))).data();if(x&&x.open&&x.qs&&x.qs.length){QN=x.qs.length;OPEN=true}}catch(e){if(e&&e.code!=="permission-denied")DBERR="Sem conexão com o banco de dados ("+(e.code||e.message)+"). Tente atualizar a página."}
  menu()}
-function menu(){clear();const m=el("div","menu");const _bg='url("'+(IMG.menu||IMG.padrao)+'")';m.style.backgroundImage=_bg;
+function menu(){clear();const m=el("div","menu");const _bg='url("'+(IMG.menu||IMG.padrao)+'")';const _bgh='url("'+(IMG.menuh||IMG.menu||IMG.padrao)+'")';m.style.setProperty("--bgv",_bg);m.style.setProperty("--bgh",_bgh);
  const top=el("div");top.style.textAlign="center";if(LOGO){const i=el("img","logo");i.src=LOGO;i.alt="";top.appendChild(i)}top.appendChild(el("span","tag","QUIZ MENSAL • "+label(MONTH)));top.appendChild(el("h1",null,CFG.title));m.appendChild(top);
  const bt=el("div","mbtns"),mg=el("p","mmsg",DBERR);
  const b1=el("button","mbtn","▶ COMEÇAR");b1.onclick=()=>OPEN?(autoFS(),pick()):mg.textContent="O quiz deste mês ainda não foi liberado. Volte em breve!";
  const b2=el("button","mbtn","🏆 RANKING");b2.onclick=ranking;const b3=el("button","mbtn alt","🔒 ADMINISTRADOR");b3.onclick=login;
- [mg,b1,b2,b3].forEach(x=>bt.appendChild(x));m.appendChild(bt);const bgb=el("div","bgb"),fg=el("div","fg");bgb.style.backgroundImage=_bg;fg.style.backgroundImage=_bg;m.appendChild(bgb);m.appendChild(fg);app.appendChild(m)}
+ [mg,b1,b2,b3].forEach(x=>bt.appendChild(x));m.appendChild(bt);app.appendChild(m)}
 
 async function pick(){clear();const w=head("QUIZ MENSAL • "+label(MONTH));w.appendChild(el("h1",null,CFG.title));w.appendChild(pic("padrao"));
  const b=el("div","box");b.appendChild(el("div","name","Prof. Vitor & Participante"));b.appendChild(el("p","txt",CFG.intro.replace("{n}",QN)));w.appendChild(b);
@@ -278,11 +276,11 @@ async function admin(m){const sy=window.scrollY;MONTH=m;const w=el("div","adm");
  const mc=el("input");mc.type="checkbox";mc.checked=CFG.music!==false;const ml=el("label");ml.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";ml.appendChild(mc);ml.appendChild(document.createTextNode("🎵 Tocar a trilha sonora durante o quiz"));pz.appendChild(ml);const fsC=el("input");fsC.type="checkbox";fsC.checked=CFG.fs!==false;const fsL=el("label");fsL.style.cssText=ml.style.cssText;fsL.appendChild(fsC);fsL.appendChild(document.createTextNode("🖥 Entrar em tela cheia ao clicar em COMEÇAR (computador)"));pz.appendChild(fsL);
  pz.appendChild(el("p","mute","Desmarcando, a música não toca para ninguém. Os sons de clique, acerto, erro e vitória continuam."));const pzm=el("p","mute","");
  const pzb=el("button","btn","💾 Salvar personalização");pzb.onclick=async()=>{try{await setDoc(doc(db,"config","site"),{title:ti.value.trim()||CFG0.title,intro:ta.value.trim()||CFG0.intro,accent:co.value,music:mc.checked,fs:fsC.checked});await loadSite();admin(m)}catch(e){pzm.textContent="Erro ao salvar."}};pz.appendChild(pzb);pz.appendChild(pzm);
- [["menu","Imagem da TELA INICIAL (fundo do menu)"],["res1","Resultado final: pontuação BAIXA (menos de 50)"],["res2","Resultado final: pontuação MÉDIA (50 a 99)"],["res3","Resultado final: 100 PONTOS"],["padrao","Cenário PADRÃO (conversando)"],["acerto","Cenário de ACERTO"],["erro","Cenário de ERRO"],["logo","Logo (PNG com fundo transparente)"]].forEach(([k,n])=>{
+ [["menu","Tela inicial – CELULAR (vertical 9:16)"],["menuh","Tela inicial – COMPUTADOR (horizontal 16:9)"],["res1","Resultado final: pontuação BAIXA (menos de 50)"],["res2","Resultado final: pontuação MÉDIA (50 a 99)"],["res3","Resultado final: 100 PONTOS"],["padrao","Cenário PADRÃO (conversando)"],["acerto","Cenário de ACERTO"],["erro","Cenário de ERRO"],["logo","Logo (PNG com fundo transparente)"]].forEach(([k,n])=>{
   const s=el("div");s.style.cssText="margin-top:14px;border-top:1px dashed var(--mute);padding-top:10px";s.appendChild(el("b",null,n));
-  const cur=k==="logo"?LOGO:IMG[k];if(cur){const im=el("img");im.src=cur;im.style.cssText="display:block;max-width:260px;width:100%;margin:6px 0;background:#888;object-fit:contain;aspect-ratio:"+(k==="menu"?"9/16":k==="logo"?"3/1":"16/9")+";";s.appendChild(im)}else s.appendChild(el("p","mute",k==="menu"?"Nenhuma imagem enviada (usando o cenário padrão).":k.startsWith("res")?"Nenhuma imagem enviada (usa a imagem padrão de acerto ou de erro).":"Nenhum logo enviado."));
-  const fi=el("input");fi.type="file";fi.accept="image/*";const fm=el("p","mute",k==="logo"?"Reduzido automaticamente.":k==="menu"?"Use 1080×1920 (vertical, 9:16).":"Use 1280×720 (16:9).");
-  fi.onchange=async()=>{const f=fi.files[0];if(!f)return;fm.textContent="Enviando...";try{const lg=k==="logo",ty=lg?"image/png":"image/jpeg";let src=await shrink(f,lg?400:1280,ty,.82);if(src.length>900000)src=await shrink(f,lg?250:900,ty,.7);if(src.length>900000){fm.textContent="Imagem pesada demais.";return}await setDoc(doc(db,"config","img_"+k),{src});await loadSite();admin(m)}catch(e){fm.textContent="Erro ao enviar a imagem."}};
+  const cur=k==="logo"?LOGO:IMG[k];if(cur){const im=el("img");im.src=cur;im.style.cssText="display:block;max-width:260px;width:100%;margin:6px 0;background:#888;object-fit:contain;aspect-ratio:"+(k==="menu"?"9/16":k==="logo"?"3/1":"16/9")+";";s.appendChild(im)}else s.appendChild(el("p","mute",k==="menu"||k==="menuh"?"Nenhuma imagem enviada (usa a outra imagem da tela inicial).":k.startsWith("res")?"Nenhuma imagem enviada (usa a imagem padrão de acerto ou de erro).":"Nenhum logo enviado."));
+  const fi=el("input");fi.type="file";fi.accept="image/*";const fm=el("p","mute",k==="logo"?"Reduzido automaticamente.":k==="menu"?"Use 1080×1920 (vertical, 9:16).":k==="menuh"?"Use 1920×1080 (horizontal, 16:9).":"Use 1280×720 (16:9).");
+  fi.onchange=async()=>{const f=fi.files[0];if(!f)return;fm.textContent="Enviando...";try{const lg=k==="logo",ty=lg?"image/png":"image/jpeg";let src=await shrink(f,lg?400:k==="menuh"?1920:1280,ty,.82);if(src.length>900000)src=await shrink(f,lg?250:k==="menuh"?1400:900,ty,.7);if(src.length>900000){fm.textContent="Imagem pesada demais.";return}await setDoc(doc(db,"config","img_"+k),{src});await loadSite();admin(m)}catch(e){fm.textContent="Erro ao enviar a imagem."}};
   s.appendChild(fi);s.appendChild(fm);const rs=el("button","opt","Restaurar padrão");rs.onclick=async()=>{try{await deleteDoc(doc(db,"config","img_"+k));await loadSite();admin(m)}catch(e){fm.textContent="Erro."}};s.appendChild(rs);pz.appendChild(s)});
  w.appendChild(pz);
  let dirty=false;const q=el("div","card");q.appendChild(el("b",null,"Perguntas de "+label(m)));const list=el("div"),cards=[];const num=()=>cards.forEach((r,i)=>{const s=r.s.value.trim();r.h.textContent=(r.bd.style.display==="none"?"▸ ":"▾ ")+"Pergunta "+(i+1)+(s?" — "+s.slice(0,60)+(s.length>60?"…":""):" (nova)")});
