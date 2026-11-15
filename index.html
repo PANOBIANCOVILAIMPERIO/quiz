@@ -64,10 +64,12 @@ body{background:#0b0716}
  .menu>.mbtns,.menu>div:first-child{z-index:3;width:min(100%,560px);margin-left:auto;margin-right:auto}
  #fsb{display:block}
 }
+.prog{font-size:17px;font-weight:bold;padding:6px 14px;top:12px;right:12px}
+@media (min-width:900px){.scene .prog{font-size:calc(var(--u)*1.7);padding:calc(var(--u)*.4) calc(var(--u)*1.1);top:calc(var(--u)*.8);right:calc(var(--u)*.8);border:2px solid #fff6;border-radius:6px}}
 </style></head>
 <body><div class="wrap" id="app"></div>
 <button id="fsb" title="Tela cheia">⛶</button>
-<div id="ver">versão 20k • tela inicial preenchendo</div>
+<div id="ver">versão 20l • pontuação maior</div>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{initializeFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,collection,query,where,getDocs,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
